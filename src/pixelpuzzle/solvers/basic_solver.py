@@ -15,7 +15,7 @@ class BasicSolver(Solver):
             self.outer = outer
             self.lines = [line for line in lines]
             self.last_updated = last_updates
-            self.progress = ProgressBar("Progress", len(lines))
+            self.progress = ProgressBar("Rows" if hz else "Columns", len(lines))
 
         def skip_line(self, index):
             self.progress[index] = f"{CC.BLUE}{CC.BOLD}-{CC.END}"
@@ -48,13 +48,17 @@ class BasicSolver(Solver):
         self.recent_board_update.reset()
 
         state = self.SweepState(self, self.board, self.last_updated_rows, hz=True)
+        state.progress.start()
         self._iterate_sweep(self.row_clues, state)
+        state.progress.stop()
 
         self.board = state.lines
 
         rotated = self._rotate(state.lines)
         state = self.SweepState(self, rotated, self.last_updated_cols, hz=False)
+        state.progress.start()
         self._iterate_sweep(self.col_clues, state)
+        state.progress.stop()
 
         self.board = self._rotate(state.lines)
         self.iteration += 1

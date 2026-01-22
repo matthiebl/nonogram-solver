@@ -90,7 +90,7 @@ def solve_puzzle(file_path: str, solver_type: Solvers) -> None:
 
         if response.lower() == "q":
             return
-        if response[0].lower() == "s":
+        if response and response[0].lower() == "s":
             try:
                 filename = response.split()[1]
                 with open(filename, "w") as file:

@@ -1,6 +1,9 @@
 import json
 from enum import StrEnum
 
+from rich.live import Live
+from rich.text import Text
+
 from pixelpuzzle.solvers import PuzzleInput, Solver
 
 
@@ -44,15 +47,27 @@ class ProgressBar:
         self.message = message
         self.length = total
         self.bar = [" "] * total
+        self.live: Live | None = None
 
     def reset(self) -> None:
         self.bar = [" "] * self.length
+
+    def start(self) -> None:
+        self.live = Live(Text.from_ansi(str(self)), refresh_per_second=30)
+        self.live.start()
+
+    def stop(self) -> None:
+        if self.live is not None:
+            self.live.stop()
+            self.live = None
 
     def __getitem__(self, index: int) -> str:
         return self.bar[index]
 
     def __setitem__(self, index: int, item: str) -> None:
         self.bar[index] = item
+        if self.live is not None:
+            self.live.update(Text.from_ansi(str(self)))
 
     def __str__(self) -> str:
         return f"[{''.join(self.bar)}] {self.message}"
