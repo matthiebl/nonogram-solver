@@ -77,18 +77,32 @@ def solve_puzzle(file_path: str, solver_type: Solvers) -> None:
         raise ValueError(f"Solver type `{solver_type}` is not valid")
 
     print(solver)
-    try:
-        while input("Iterate (ENTER) | Quit (q) > ") != "q":
-            if solver.iterate():
-                print("Complete!")
-                return
-        print(solver)
-    except ValueError:
-        pass
-    except EOFError:
-        pass
-    except KeyboardInterrupt:
-        pass
+
+    while True:
+        try:
+            response = input("Step (ENTER) | Save (s <file>) | Quit (q) > ")
+        except ValueError:
+            continue
+        except EOFError:
+            break
+        except KeyboardInterrupt:
+            break
+
+        if response.lower() == "q":
+            return
+        if response[0].lower() == "s":
+            try:
+                filename = response.split()[1]
+                with open(filename, "w") as file:
+                    file.write(InputParser.to_text(solver))
+                print(f"Saved current state to {filename}\n")
+            except IndexError:
+                print("No file name provided!\n")
+            except Exception as e:
+                print("Failed to write to output:", type(e).__name__, e, "\n")
+        elif solver.iterate():
+            print("Complete!")
+            return
 
 
 def base_repl(f: Callable[[str], None]) -> None:

@@ -1,7 +1,7 @@
 import json
 from enum import StrEnum
 
-from pixelpuzzle.solvers import PuzzleInput
+from pixelpuzzle.solvers import PuzzleInput, Solver
 
 
 class CC(StrEnum):
@@ -30,6 +30,13 @@ class InputParser:
         col_clues = [tuple(list(map(int, line.split()))[::-1]) for line in col_clues.split("\n")]
         board = board.split("\n") if board else None
         return PuzzleInput(row_clues, col_clues, board)
+
+    @staticmethod
+    def to_text(solver: Solver) -> str:
+        row_clues = "\n".join([" ".join(map(str, row)) for row in solver.row_clues])
+        col_clues = "\n".join([" ".join(map(str, row)) for row in solver.col_clues])
+        board = "\n".join(solver.board)
+        return "\n\n".join([row_clues, col_clues, board])
 
 
 class ProgressBar:
