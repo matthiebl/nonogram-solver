@@ -37,7 +37,7 @@ class InputParser:
     @staticmethod
     def to_text(solver: Solver) -> str:
         row_clues = "\n".join([" ".join(map(str, row)) for row in solver.row_clues])
-        col_clues = "\n".join([" ".join(map(str, row)) for row in solver.col_clues])
+        col_clues = "\n".join([" ".join(map(str, col[::-1])) for col in solver.col_clues])
         board = "\n".join(solver.board)
         return "\n\n".join([row_clues, col_clues, board])
 

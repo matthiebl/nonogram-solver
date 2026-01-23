@@ -33,22 +33,18 @@ def main() -> None:
 
     # Solve command
     solve_parser = subparsers.add_parser(CliCommand.SOLVE, help="Solve a pixel puzzle")
-    solve_parser.add_argument(
-        "--input", "-i", type=str, required=True, help="Input to solve (.pix.json)"
-    )
+    solve_parser.add_argument("input", type=str, help="Input to solve (.txt/.pix.json)")
     solve_parser.add_argument(
         "--solver", "-s", type=Solvers, default=Solvers.BASIC, help="Solver type"
+    )
+    solve_parser.add_argument(
+        "--interactive", "-i", action="store_true", help="Interactive mode in a GUI"
     )
 
     # Repl command
     repl_parser = subparsers.add_parser(CliCommand.REPL, help="Interactive REPL")
-    repl_parser.add_argument("--input", "-i", type=str, help="Input to parse")
     repl_parser.add_argument(
-        "--parser",
-        type=ReplParser,
-        choices=list(ReplParser),
-        required=True,
-        help="The parser to run",
+        "parser", type=ReplParser, choices=list(ReplParser), help="The parser to run"
     )
 
     args = parser.parse_args()
@@ -76,9 +72,9 @@ def solve_puzzle(file_path: str, solver_type: Solvers) -> None:
     else:
         raise ValueError(f"Solver type `{solver_type}` is not valid")
 
-    print(solver)
-
     while True:
+        print(solver)
+
         try:
             response = input("Step (ENTER) | Save (s <file>) | Quit (q) > ")
         except ValueError:
@@ -101,6 +97,7 @@ def solve_puzzle(file_path: str, solver_type: Solvers) -> None:
             except Exception as e:
                 print("Failed to write to output:", type(e).__name__, e, "\n")
         elif solver.iterate():
+            print(solver)
             print("Complete!")
             return
 

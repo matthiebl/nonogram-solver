@@ -48,21 +48,16 @@ class BasicSolver(Solver):
         self.recent_board_update.reset()
 
         state = self.SweepState(self, self.board, self.last_updated_rows, hz=True)
-        state.progress.start()
         self._iterate_sweep(self.row_clues, state)
-        state.progress.stop()
 
         self.board = state.lines
 
         rotated = self._rotate(state.lines)
         state = self.SweepState(self, rotated, self.last_updated_cols, hz=False)
-        state.progress.start()
         self._iterate_sweep(self.col_clues, state)
-        state.progress.stop()
 
         self.board = self._rotate(state.lines)
         self.iteration += 1
-        print(self)
 
         if all(line.count(Square.BLANK) == 0 for line in self.board):
             self.completed = True
@@ -92,7 +87,6 @@ class BasicSolver(Solver):
 
     def _iterate_line(self, index: int, clues: tuple[int], line: str, state: SweepState):
         state.progress[index] = "."
-
         if state.last_updated[index] < self.iteration:
             state.skip_line(index)
             return
@@ -103,9 +97,11 @@ class BasicSolver(Solver):
         state.increment_line(index, incremented)
 
     def _iterate_sweep(self, clues, state: SweepState):
+        state.progress.start()
         with ThreadPoolExecutor(max_workers=50) as tp:
             for i, (clue, line) in enumerate(zip(clues, state.lines)):
                 tp.submit(self._iterate_line, i, clue, line, state)
+        state.progress.stop()
 
     def _rotate(self, board):
         return list("".join(_) for _ in zip(*board))
@@ -122,10 +118,12 @@ class BasicSolver(Solver):
         end = reversed[:last].count(Square.BLACK)
 
         clues_queue = deque(clues)
-        while clues_queue[0] <= start:
+        while clues_queue and clues_queue[0] <= start:
             start -= clues_queue.popleft()
-        while clues_queue[-1] <= end:
+        while clues_queue and clues_queue[-1] <= end:
             end -= clues_queue.pop()
+        if len(clues_queue) == 0:
+            return False
 
         length = state.count(Square.BLANK) - first - last
         remaining = length + 1 - sum(clues_queue) - len(clues_queue)
