@@ -1,7 +1,7 @@
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 
-from pixelpuzzle.solvers import BoardUpdate, Solver, Square
+from pixelpuzzle.solvers import Solver, Square
 from pixelpuzzle.solvers.utils import increment_state
 from pixelpuzzle.utils import CC, ProgressBar
 
@@ -41,7 +41,6 @@ class BasicSolver(Solver):
         self.iteration = 0
         self.last_updated_rows = [0] * self.rows
         self.last_updated_cols = [0] * self.cols
-        self.recent_board_update = BoardUpdate(self.rows, self.cols)
         self.complexity_base = 10**7
 
     def iterate(self) -> bool:
