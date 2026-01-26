@@ -5,6 +5,8 @@ from enum import StrEnum
 from rich.live import Live
 from rich.text import Text
 
+from pixelpuzzle.exceptions import PixelValidationError
+
 
 class CC(StrEnum):
     RED = "\033[91m"
@@ -37,6 +39,8 @@ class InputParser:
         [row_clues, col_clues, board] = content.split("\n\n")
         row_clues = [tuple(map(int, line.split())) for line in row_clues.split("\n")]
         col_clues = [tuple(list(map(int, line.split()))[::-1]) for line in col_clues.split("\n")]
+        if sum(sum(clues) for clues in row_clues) != sum(sum(clues) for clues in col_clues):
+            raise PixelValidationError("Clues provided are not possible")
         board = board.split("\n") if board else None
         return PuzzleInput(row_clues, col_clues, board)
 

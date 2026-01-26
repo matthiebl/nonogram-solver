@@ -1,3 +1,6 @@
+import pytest
+
+from pixelpuzzle.exceptions import PixelIterationError
 from pixelpuzzle.solvers.utils import create_possibilities, deduce_empty_line, increment_state
 
 
@@ -113,3 +116,10 @@ def test_increment_state_broken():
         == "            ########                              "
     )
     assert increment_state((3,), ".. ..         ") == ".....         "
+
+
+def test_increment_problem_1():
+    clues = (3, 2, 6, 1, 5, 1, 2, 4)
+    initial_state = ".###.##. #####.   ####.####..####.."
+    with pytest.raises(PixelIterationError):
+        increment_state(clues, initial_state)

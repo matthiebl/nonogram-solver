@@ -1,6 +1,7 @@
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from pixelpuzzle.exceptions import PixelExceptionError
 from pixelpuzzle.solvers import Solver, Square
 from pixelpuzzle.solvers.utils import increment_state
 from pixelpuzzle.utils import CC, ProgressBar
@@ -98,8 +99,15 @@ class BasicSolver(Solver):
     def _iterate_sweep(self, clues, state: SweepState):
         state.progress.start()
         with ThreadPoolExecutor(max_workers=50) as tp:
-            for i, (clue, line) in enumerate(zip(clues, state.lines)):
+            futures = [
                 tp.submit(self._iterate_line, i, clue, line, state)
+                for i, (clue, line) in enumerate(zip(clues, state.lines))
+            ]
+            for future in as_completed(futures):
+                exception = future.exception()
+                if isinstance(exception, PixelExceptionError):
+                    raise PixelExceptionError("Failed to iterate lines", exception)
+
         state.progress.stop()
 
     def _rotate(self, board):

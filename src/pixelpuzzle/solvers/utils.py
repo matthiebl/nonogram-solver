@@ -1,3 +1,4 @@
+from pixelpuzzle.exceptions import PixelIterationError
 from pixelpuzzle.solvers import Square
 
 
@@ -59,6 +60,8 @@ def create_possibilities(clues: tuple[int], mask: str) -> tuple[str]:
 
 def increment_state(clues: tuple[int], state: str) -> str:
     possibilities = create_possibilities(clues, state)
+    if len(possibilities) == 0:
+        raise PixelIterationError("State does not comply with clues", clues, state)
 
     probabilities = {i: {Square.BLACK: 0, Square.WHITE: 0} for i in range(len(state))}
     for option in possibilities:
