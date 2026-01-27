@@ -37,6 +37,7 @@ def main() -> None:
     solve_parser.add_argument(
         "--solver", "-s", type=Solvers, default=Solvers.BASIC, help="Solver type"
     )
+    solve_parser.add_argument("--auto", action="store_true", help="Run solver automatically")
     solve_parser.add_argument(
         "--interactive", "-i", action="store_true", help="Interactive mode in a GUI"
     )
@@ -50,7 +51,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == CliCommand.SOLVE:
-        solve_puzzle(args.input, args.solver)
+        solve_puzzle(args.input, args.solver, args.auto)
     elif args.command == CliCommand.REPL:
         if args.parser == ReplParser.ECHO:
             base_repl(echo_repl)
@@ -64,29 +65,33 @@ def main() -> None:
         raise ValueError("Invalid command found!")
 
 
-def solve_puzzle(file_path: str, solver_type: Solvers) -> None:
+def solve_puzzle(file_path: str, solver_type: Solvers, auto_mode: bool) -> None:
+    class SolveInput(StrEnum):
+        QUIT = "q"
+        SAVE = "s"
+        CONTINUE = ""
+
     puzzle_input = InputParser.parse(file_path)
 
     if solver_type == Solvers.BASIC:
         solver = BasicSolver.of(puzzle_input)
     else:
         raise ValueError(f"Solver type `{solver_type}` is not valid")
+    solver.set_verbosity(not auto_mode)
 
     while True:
         print(solver)
-
-        try:
-            response = input("Step (ENTER) | Save (s <file>) | Quit (q) > ")
-        except ValueError:
-            continue
-        except EOFError:
-            break
-        except KeyboardInterrupt:
+        response = (
+            SolveInput.CONTINUE
+            if auto_mode
+            else get_input("Step (ENTER) | Save (s <file>) | Quit (q) > ")
+        )
+        if response is None:
             break
 
-        if response.lower() == "q":
+        if response.lower() == SolveInput.QUIT:
             return
-        if response and response[0].lower() == "s":
+        elif response and response[0].lower() == SolveInput.SAVE:
             try:
                 filename = response.split()[1]
                 with open(filename, "w") as file:
@@ -96,22 +101,21 @@ def solve_puzzle(file_path: str, solver_type: Solvers) -> None:
                 print("No file name provided!\n")
             except Exception as e:
                 print("Failed to write to output:", type(e).__name__, e, "\n")
-        elif solver.iterate():
-            print(solver)
-            print("Complete!")
-            return
+        elif response == SolveInput.CONTINUE:
+            if solver.iterate():
+                print(solver.board)
+                print("Complete!")
+                return
+        else:
+            print("Input unknown!")
 
 
 def base_repl(f: Callable[[str], None]) -> None:
     while True:
-        try:
-            f(input("> "))
-        except ValueError:
-            continue
-        except EOFError:
+        response = get_input("> ")
+        if response is None:
             break
-        except KeyboardInterrupt:
-            break
+        f(response)
 
 
 def echo_repl(line: str) -> None:
@@ -144,6 +148,17 @@ def incr_repl(line: str) -> None:
     else:
         print(" ", end=" ", flush=True)
     print(display_state(res), clues)
+
+
+def get_input(prompt: str) -> str:
+    try:
+        return input(prompt)
+    except ValueError:
+        return get_input(prompt)
+    except EOFError:
+        return None
+    except KeyboardInterrupt:
+        return None
 
 
 def display_state(state: str) -> str:

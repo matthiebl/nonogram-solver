@@ -1,12 +1,4 @@
-from enum import StrEnum
-
-from pixelpuzzle.utils import BoardPrinter, PuzzleInput
-
-
-class Square(StrEnum):
-    BLANK = " "
-    WHITE = "."
-    BLACK = "#"
+from pixelpuzzle.utils import Board, BoardPrinter, PuzzleInput, Square
 
 
 class BoardUpdate:
@@ -29,18 +21,22 @@ class Solver:
         self.rows = len(self.row_clues)
         self.cols = len(self.col_clues)
 
-        self.board = [Square.BLANK * self.cols for _ in range(self.rows)]
+        self.board = Board(self.rows, self.cols, default=Square.BLANK)
         self.recent_board_update = BoardUpdate(self.rows, self.cols)
         self.pretty_board = BoardPrinter(self.row_clues, self.col_clues)
 
         self.completed = False
+        self.verbose = False
 
     @classmethod
     def of(cls, puzzle: PuzzleInput) -> "Solver":
         solver: Solver = cls(puzzle.row_clues, puzzle.col_clues)
-        if puzzle.initial_board:
+        if puzzle.initial_board is not None:
             solver.board = puzzle.initial_board
         return solver
+
+    def set_verbosity(self, verbose: bool) -> None:
+        self.verbose = verbose
 
     def iterate(self) -> None:
         raise NotImplementedError("Solver.iterate")

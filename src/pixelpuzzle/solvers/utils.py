@@ -1,5 +1,5 @@
 from pixelpuzzle.exceptions import PixelIterationError
-from pixelpuzzle.solvers import Square
+from pixelpuzzle.utils import Square
 
 
 def deduce_empty_line(length: int, clues: list[int]) -> str:
@@ -8,8 +8,6 @@ def deduce_empty_line(length: int, clues: list[int]) -> str:
 
     known_length = sum(clues) + len(clues) - 1
     gap = length - known_length
-
-    print(clues, gap)
 
     if gap == 0:
         result = Square.BLACK * clues[0]

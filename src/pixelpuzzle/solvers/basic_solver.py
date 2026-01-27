@@ -2,29 +2,29 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pixelpuzzle.exceptions import PixelExceptionError
-from pixelpuzzle.solvers import Solver, Square
+from pixelpuzzle.solvers import Solver
 from pixelpuzzle.solvers.utils import increment_state
-from pixelpuzzle.utils import CC, ProgressBar
+from pixelpuzzle.utils import CC, Board, ProgressBar, Square
 
 
 class BasicSolver(Solver):
     class SweepState:
         def __init__(
-            self, outer: "BasicSolver", lines: list[str], last_updates: list[int], hz: bool
+            self, outer: "BasicSolver", board: Board[Square], last_updates: list[int], hz: bool
         ):
             self.horizontal = hz
             self.outer = outer
-            self.lines = [line for line in lines]
+            self.lines = ["".join(line) for line in board]
             self.last_updated = last_updates
-            self.progress = ProgressBar("Rows" if hz else "Columns", len(lines))
+            self.progress = ProgressBar("Rows" if hz else "Columns", len(self.lines))
 
-        def skip_line(self, index):
+        def skip_line(self, index: int) -> None:
             self.progress[index] = f"{CC.BLUE}{CC.BOLD}-{CC.END}"
 
-        def complex_line(self, index):
+        def complex_line(self, index: int) -> None:
             self.progress[index] = f"{CC.RED}{CC.BOLD}#{CC.END}"
 
-        def increment_line(self, index, line):
+        def increment_line(self, index: int, line: str) -> None:
             old_line = self.lines[index]
             updated = line != old_line
             self.progress[index] = f"{CC.GREEN if updated else CC.END}{CC.BOLD}#{CC.END}"
@@ -50,8 +50,6 @@ class BasicSolver(Solver):
         state = self.SweepState(self, self.board, self.last_updated_rows, hz=True)
         self._iterate_sweep(self.row_clues, state)
 
-        self.board = state.lines
-
         rotated = self._rotate(state.lines)
         state = self.SweepState(self, rotated, self.last_updated_cols, hz=False)
         self._iterate_sweep(self.col_clues, state)
@@ -71,8 +69,8 @@ class BasicSolver(Solver):
             self.complexity_base *= 10
         return False
 
-    def _update_board(self, i, prev, curr, hz: bool):
-        def update_dir(last_updated, last_updated_perpendicular):
+    def _update_board(self, i: int, prev: str, curr: str, hz: bool) -> None:
+        def update_dir(last_updated: list[int], last_updated_perpendicular: list[int]) -> None:
             last_updated[i] = self.iteration + 1
             for j, (n, m) in enumerate(zip(prev, curr)):
                 if n != m:
@@ -97,7 +95,9 @@ class BasicSolver(Solver):
         state.increment_line(index, incremented)
 
     def _iterate_sweep(self, clues, state: SweepState):
-        state.progress.start()
+        if self.verbose:
+            state.progress.start()
+
         with ThreadPoolExecutor(max_workers=50) as tp:
             futures = [
                 tp.submit(self._iterate_line, i, clue, line, state)
@@ -110,8 +110,8 @@ class BasicSolver(Solver):
 
         state.progress.stop()
 
-    def _rotate(self, board):
-        return list("".join(_) for _ in zip(*board))
+    def _rotate(self, lines: list[str]) -> Board[Square]:
+        return Board.of(list("".join(_) for _ in zip(*lines)))
 
     def _is_complex(self, clues: tuple[int], state: str):
         if state.count(Square.BLANK) < 15:

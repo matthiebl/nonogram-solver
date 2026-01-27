@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -16,11 +17,50 @@ class CC(StrEnum):
     END = "\033[0m"
 
 
+class Square(StrEnum):
+    BLANK = " "
+    WHITE = "."
+    BLACK = "#"
+
+
+class Board[T]:
+    def __init__(self, rows: int, cols: int, default: T):
+        self.rows = rows
+        self.cols = cols
+
+        self._data = [[default] * self.cols for _ in range(self.rows)]
+
+    @staticmethod
+    def of(rows: list[str] = None) -> "Board[Square]":
+        board = Board(len(rows), len(rows[0]), default=Square.BLANK)
+        board._data = list(map(list, rows))
+        return board
+
+    def __getitem__(self, index: tuple[int, int]) -> Square:
+        r, c = index
+        return self._data[r][c]
+
+    def __setitem__(self, index: tuple[int, int], value: Square) -> None:
+        r, c = index
+        self._data[r][c] = value
+
+    def __iter__(self) -> Iterable[list[T]]:
+        return iter(self._data)
+
+    def __str__(self) -> str:
+        result = "\n+" + "-" * (2 * self.cols - 1) + "+\n"
+        result += "\n".join(
+            f"|{' '.join(map(str, row)).replace(Square.WHITE, ' ')}|" for row in self._data
+        )
+        result += "\n+" + "-" * (2 * self.cols - 1) + "+\n\n"
+        return result
+
+
 @dataclass
 class PuzzleInput:
     row_clues: list[tuple[int]]
     col_clues: list[tuple[int]]
-    initial_board: list[str] | None
+    initial_board: Board[Square] | None = None
 
 
 class InputParser:
@@ -41,8 +81,10 @@ class InputParser:
         col_clues = [tuple(list(map(int, line.split()))[::-1]) for line in col_clues.split("\n")]
         if sum(sum(clues) for clues in row_clues) != sum(sum(clues) for clues in col_clues):
             raise PixelValidationError("Clues provided are not possible")
-        board = board.split("\n") if board else None
-        return PuzzleInput(row_clues, col_clues, board)
+        if board:
+            return PuzzleInput(row_clues, col_clues, Board.of(board.split("\n")))
+        else:
+            return PuzzleInput(row_clues, col_clues)
 
     @staticmethod
     def to_text(solver) -> str:
@@ -128,7 +170,7 @@ class BoardPrinter:
                 if y == self.board_y_offset - 1 or y == height - 1:
                     self.board[y][x] = "+"
 
-    def merge_board(self, board: list[str], updates: list[list[bool]]) -> None:
+    def merge_board(self, board: Board[Square], updates: list[list[bool]]) -> None:
         for i, row in enumerate(board):
             for j, cell in enumerate(row):
                 cell_value = f"{CC.BOLD}{CC.GREEN}{cell}{CC.END}" if updates[i][j] else cell
