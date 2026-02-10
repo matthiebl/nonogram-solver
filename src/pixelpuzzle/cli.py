@@ -3,7 +3,7 @@ from collections.abc import Callable
 from enum import StrEnum
 
 from pixelpuzzle.solvers.basic_solver import BasicSolver
-from pixelpuzzle.solvers.utils import deduce_empty_line, increment_state
+from pixelpuzzle.solvers.utils import increment_empty_line, increment_state
 from pixelpuzzle.utils import InputParser
 
 
@@ -124,7 +124,7 @@ def echo_repl(line: str) -> None:
 
 def line_repl(line: str) -> None:
     [length, *clues] = list(map(int, line.split()))
-    res = deduce_empty_line(length, clues)
+    res = increment_empty_line(clues, " " * length)
     print("|" + "|".join(list(res)) + "|")
 
 

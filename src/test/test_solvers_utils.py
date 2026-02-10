@@ -1,26 +1,32 @@
 import pytest
 
 from pixelpuzzle.exceptions import PixelIterationError
-from pixelpuzzle.solvers.utils import create_possibilities, deduce_empty_line, increment_state
+from pixelpuzzle.solvers.utils import (
+    create_possibilities,
+    increment_empty_line,
+    increment_state,
+    increment_state_from_edge,
+    split_from_edge,
+)
 
 
-def test_deduce_empty_line_len_5():
-    assert deduce_empty_line(5, []) == "....."
-    assert deduce_empty_line(5, [1]) == "     "
-    assert deduce_empty_line(5, [1, 1]) == "     "
-    assert deduce_empty_line(5, [1, 1, 1]) == "#.#.#"
-    assert deduce_empty_line(5, [2]) == "     "
-    assert deduce_empty_line(5, [2, 1]) == " #   "
-    assert deduce_empty_line(5, [1, 2]) == "   # "
-    assert deduce_empty_line(5, [3]) == "  #  "
-    assert deduce_empty_line(5, [3, 1]) == "###.#"
-    assert deduce_empty_line(5, [1, 3]) == "#.###"
-    assert deduce_empty_line(5, [4]) == " ### "
-    assert deduce_empty_line(5, [5]) == "#####"
+def test_increment_empty_line_len_5():
+    assert increment_empty_line([], "     ") == "....."
+    assert increment_empty_line([1], "     ") == "     "
+    assert increment_empty_line([1, 1], "     ") == "     "
+    assert increment_empty_line([1, 1, 1], "     ") == "#.#.#"
+    assert increment_empty_line([2], "     ") == "     "
+    assert increment_empty_line([2, 1], "     ") == " #   "
+    assert increment_empty_line([1, 2], "     ") == "   # "
+    assert increment_empty_line([3], "     ") == "  #  "
+    assert increment_empty_line([3, 1], "     ") == "###.#"
+    assert increment_empty_line([1, 3], "     ") == "#.###"
+    assert increment_empty_line([4], "     ") == " ### "
+    assert increment_empty_line([5], "     ") == "#####"
 
 
-def test_deduce_empty_line_longer():
-    assert deduce_empty_line(13, [3, 1, 5]) == "  #     ###  "
+def test_increment_empty_line_longer():
+    assert increment_empty_line([3, 1, 5], "             ") == "  #     ###  "
 
 
 def test_create_possibilities_no_clues():
@@ -123,3 +129,16 @@ def test_increment_problem_1():
     initial_state = ".###.##. #####.   ####.####..####.."
     with pytest.raises(PixelIterationError):
         increment_state(clues, initial_state)
+
+
+def test_increment_state_from_edge():
+    assert increment_state_from_edge((3), "#     ")
+
+
+def test_split_from_edge():
+    assert split_from_edge("#. .#") == ("#.", " ", ".#")
+    assert split_from_edge("#.   .#") == ("#.", "   ", ".#")
+    assert split_from_edge(".   .#") == (".", "   ", ".#")
+    assert split_from_edge(".   .####.#") == (".", "   ", ".####.#")
+    assert split_from_edge("#  #") == ("#", "  ", "#")
+    assert split_from_edge("##  #.") == ("##", "  ", "#.")

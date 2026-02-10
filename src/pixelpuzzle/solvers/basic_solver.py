@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pixelpuzzle.exceptions import PixelExceptionError
 from pixelpuzzle.solvers import Solver
-from pixelpuzzle.solvers.utils import increment_state
+from pixelpuzzle.solvers.utils import increment_empty_line, increment_state
 from pixelpuzzle.utils import CC, Board, ProgressBar, Square
 
 
@@ -16,6 +16,9 @@ class SweepState:
         self.lines = ["".join(line) for line in board]
         self.last_updated = last_updates
         self.progress = ProgressBar("Rows" if hz else "Columns", len(self.lines))
+
+    def start_line(self, index: int) -> None:
+        self.progress[index] = "."
 
     def skip_line(self, index: int) -> None:
         self.progress[index] = f"{CC.BLUE}{CC.BOLD}-{CC.END}"
@@ -87,15 +90,19 @@ class BasicSolver(Solver):
         state.progress.stop()
 
     def _iterate_line(self, index: int, clues: tuple[int], line: str, state: SweepState):
-        state.progress[index] = "."
-        if state.last_updated[index] < self.iteration:
+        state.start_line(index)
+        if state.last_updated[index] < self.iteration or line.count(Square.BLANK) == 0:
             state.skip_line(index)
             return
-        if self._is_complex(clues, line):
-            state.complex_line(index)
+        if self.iteration == 0:
+            incremented = increment_empty_line(clues, line)
+            state.increment_line(index, incremented)
             return
-        incremented = increment_state(clues, line)
-        state.increment_line(index, incremented)
+        if not self._is_complex(clues, line):
+            incremented = increment_state(clues, line)
+            state.increment_line(index, incremented)
+            return
+        state.complex_line(index)
 
     def _is_complex(self, clues: tuple[int], state: str):
         if state.count(Square.BLANK) < 15:
