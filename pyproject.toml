@@ -25,7 +25,10 @@ dev = [
 pixel = "pixelpuzzle.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pixelpuzzle"]
+packages = [
+    "src/pixel",
+    "src/nonogram",
+]
 
 [tool.ruff]
 line-length = 100
@@ -42,8 +45,8 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-testpaths = ["src/test"]
+testpaths = ["tst/"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=advent --cov-report=term-missing"
+addopts = "-v --cov=nonogram --cov-report=term-missing"
