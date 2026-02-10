@@ -38,6 +38,9 @@ class LineView(list[CellState]):
     def state(self) -> tuple[CellState, ...]:
         return tuple(self)
 
+    def is_complete(self) -> bool:
+        return all(cell != CellState.UNKNOWN for cell in self)
+
     def __str__(self) -> str:
         return "".join(str(cell) for cell in self)
 

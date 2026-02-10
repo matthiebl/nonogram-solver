@@ -55,6 +55,15 @@ class TestLineView:
 
         assert line1 == line2
 
+    def test_init_copy(self):
+        line = LineView(".# ")
+        copy = LineView(line)
+        assert line == copy
+        assert line is not copy
+        copy[0] = CellState.BLACK
+        assert line[0] == CellState.WHITE
+        assert copy[0] == CellState.BLACK
+
     @pytest.mark.parametrize("init", [1, "a", ["a"], ("a",), [1, 2, 3], ".#123"])
     def test_invalid_types(self, init):
         """
