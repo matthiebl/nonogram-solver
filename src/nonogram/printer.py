@@ -13,4 +13,4 @@ class NonogramPrinter:
         for i in range(self.grid.height):
             output += " ".join(map(str, self.grid.row(i))) + "\n"
 
-        return output + "\n"
+        return output

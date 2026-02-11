@@ -38,9 +38,9 @@ class PropagationEngine:
                 else grid.apply_col(index, new_line)
             ):
                 changed = True
-                updated_indexes = [
+                updated_indices = [
                     i for i, (old, new) in enumerate(zip(line, new_line)) if old != new
                 ]
-                queue.extend([("col" if kind == "row" else "row", i) for i in updated_indexes])
+                queue.extend([("col" if kind == "row" else "row", i) for i in updated_indices])
 
         return changed

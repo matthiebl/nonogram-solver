@@ -25,6 +25,9 @@ class LineClue(tuple[int]):
         if not isinstance(base, (tuple, list)) or not all(isinstance(x, int) for x in base):
             raise TypeError("LineClue must be init as tuple[int] or list[int]")
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({', '.join(map(str, self))})"
+
 
 class LineView(list[CellState]):
     def __init__(self, base: Any) -> None:
@@ -43,6 +46,12 @@ class LineView(list[CellState]):
 
     def __str__(self) -> str:
         return "".join(str(cell) for cell in self)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self})"
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
 
 class Grid:

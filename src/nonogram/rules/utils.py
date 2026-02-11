@@ -3,6 +3,14 @@ from nonogram.exceptions import LineTooShortContradiction
 
 
 def black_runs(state: LineView) -> list[tuple[int, int]]:
+    """Returns a list of the sequences of black cells.
+
+    Args:
+        state (LineView): A given line state
+
+    Returns:
+        list[tuple[int, int]]: A list of (start index, length) pairs
+    """
     runs = []
     pos = 0
     n = len(state)
@@ -20,6 +28,15 @@ def black_runs(state: LineView) -> list[tuple[int, int]]:
 
 
 def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
+    """Returns the indices of the earliest start to each clue.
+    Ignores some aspects of current cells, other than completely impossible
+
+    Raises:
+        LineTooShortContradiction: When unable to find a place for all clues
+
+    Returns:
+        list[int]: A list of earliest indices for the left of each clue
+    """
     starts = []
     pos = 0
     for clue in clues:
@@ -41,6 +58,15 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
 
 
 def latest_starts(clues: LineClue, state: LineView) -> list[int]:
+    """Returns the indices of the latest start to each clue.
+    Ignores some aspects of current cells, other than completely impossible
+
+    Raises:
+        LineTooShortContradiction: When unable to find a place for all clues
+
+    Returns:
+        list[int]: A list of latest indices for the left of each clue
+    """
     starts = []
     pos = len(state)
 
