@@ -26,7 +26,7 @@ def solve_nonogram(path: str) -> None:
     )
 
     console = Console()
-    with Live(render_grid(puzzle.grid), refresh_per_second=5) as live:
+    with Live(None, refresh_per_second=10) as live:
         observer = RichObserver(puzzle, live)
         engine = PropagationEngine(line_solver=line_solver, observer=observer)
         engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
