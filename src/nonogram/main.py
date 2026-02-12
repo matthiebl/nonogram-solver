@@ -13,7 +13,7 @@ from nonogram.solver.engine import PropagationEngine
 from nonogram.solver.line_solver import LineSolver
 
 
-def solve_nonogram(path: str):
+def solve_nonogram(path: str) -> None:
     puzzle = parse_nonogram(path)
     line_solver = LineSolver(
         rules=[

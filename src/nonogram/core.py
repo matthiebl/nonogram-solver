@@ -1,8 +1,7 @@
 from enum import StrEnum
 from typing import Any
 
-from nonogram.exceptions import (CellConflictContradiction,
-                                 LineTooShortContradiction)
+from nonogram.exceptions import CellConflictContradiction, LineTooShortContradiction
 
 
 class CellState(StrEnum):
@@ -51,7 +50,7 @@ class LineView(list[CellState]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self})"
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         return hash(str(self))
 
 
