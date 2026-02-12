@@ -1,16 +1,43 @@
-from nonogram.core import Grid, LineClue
+from rich.live import Live
+from rich.table import Table
+from rich.text import Text
+
+from nonogram.core import CellState, Grid, LineView
+from nonogram.parser import PuzzleInput
+from nonogram.solver.observer import EngineObserver
 
 
-class NonogramPrinter:
-    def __init__(self, grid: Grid, row_clues: list[LineClue], col_clues: list[LineClue]) -> None:
-        self.grid = grid
-        self.row_clues = row_clues
-        self.col_clues = col_clues
+class RichObserver(EngineObserver):
+    def __init__(self, puzzle: PuzzleInput, live: Live) -> None:
+        self.puzzle = puzzle
+        self.live = live
 
-    def __str__(self) -> str:
-        output = ""
+        self.step = 0
 
-        for i in range(self.grid.height):
-            output += " ".join(map(str, self.grid.row(i))) + "\n"
+    def on_line_update(self, kind: str, index: int, old: LineView, new: LineView) -> None:
+        self.live.update(render_grid(self.puzzle.grid))
 
-        return output
+    def on_step(self, kind: str, index: int) -> None:
+        self.step += 1
+
+
+def render_cell(cell: CellState) -> Text:
+    """Full range of shades: █ ▓ ▒ ░
+    """
+    if cell == CellState.BLACK:
+        return Text("██")
+    if cell == CellState.WHITE:
+        return Text("░░", style="grey30")
+    return Text("  ")
+
+
+def render_grid(grid: Grid) -> Table:
+    table = Table(show_header=False, box=None, padding=(0, 0))
+
+    for _ in range(grid.width):
+        table.add_column(justify="center")
+
+    for row in grid.cells:
+        table.add_row(*[render_cell(c) for c in row])
+
+    return table

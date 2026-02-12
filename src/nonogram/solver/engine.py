@@ -2,11 +2,13 @@ from collections import deque
 
 from nonogram.core import Grid, LineClue
 from nonogram.solver.line_solver import LineSolver
+from nonogram.solver.observer import EngineObserver
 
 
 class PropagationEngine:
-    def __init__(self, line_solver: LineSolver) -> None:
+    def __init__(self, line_solver: LineSolver, observer: EngineObserver | None = None) -> None:
         self.line_solver = line_solver
+        self.observer = observer
 
     def propagate(self, grid: Grid, row_clues: list[LineClue], col_clues: list[LineClue]) -> bool:
         """Propagates a grid as far as possible using the engine's line solver.
@@ -28,6 +30,9 @@ class PropagationEngine:
         while queue:
             kind, index = queue.popleft()
 
+            if self.observer:
+                self.observer.on_step(kind, index)
+
             clues = row_clues[index] if kind == "row" else col_clues[index]
             line = grid.row(index) if kind == "row" else grid.col(index)
 
@@ -42,5 +47,11 @@ class PropagationEngine:
                     i for i, (old, new) in enumerate(zip(line, new_line)) if old != new
                 ]
                 queue.extend([("col" if kind == "row" else "row", i) for i in updated_indices])
+
+                if self.observer:
+                    self.observer.on_line_update(kind, index, line, new_line)
+
+        if grid.is_solved() and self.observer:
+            self.observer.on_solved()
 
         return changed

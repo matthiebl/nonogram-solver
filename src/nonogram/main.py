@@ -1,7 +1,10 @@
 from argparse import ArgumentParser
 
+from rich.console import Console
+from rich.live import Live
+
 from nonogram.parser import parse_nonogram
-from nonogram.printer import NonogramPrinter
+from nonogram.printer import RichObserver, render_grid
 from nonogram.rules.edge_rules import EdgeWorkerRule
 from nonogram.rules.enumeration_rules import EnumerationRule
 from nonogram.rules.overlap_rules import NeverBlackRule, OverlapRule
@@ -21,12 +24,12 @@ def solve_nonogram(path: str):
             EnumerationRule(),
         ]
     )
-    engine = PropagationEngine(line_solver=line_solver)
 
-    engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
-
-    printer = NonogramPrinter(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
-    print(printer)
+    console = Console()
+    with Live(render_grid(puzzle.grid), refresh_per_second=5) as live:
+        observer = RichObserver(puzzle, live)
+        engine = PropagationEngine(line_solver=line_solver, observer=observer)
+        engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
 
 
 def main() -> None:
