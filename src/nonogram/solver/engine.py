@@ -30,11 +30,11 @@ class PropagationEngine:
         while queue:
             kind, index = queue.popleft()
 
-            if self.observer:
-                self.observer.on_step(kind, index)
-
             clues = row_clues[index] if kind == "row" else col_clues[index]
             line = grid.row(index) if kind == "row" else grid.col(index)
+
+            if self.observer:
+                self.observer.on_step(kind, index)
 
             new_line = self.line_solver.solve(clues, line)
             if (
@@ -50,6 +50,9 @@ class PropagationEngine:
 
                 if self.observer:
                     self.observer.on_line_update(kind, index, line, new_line)
+
+            if self.line_solver.retry_last_line:
+                queue.append((kind, index))
 
         if grid.is_solved() and self.observer:
             self.observer.on_solved()

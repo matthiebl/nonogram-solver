@@ -2,6 +2,8 @@ from nonogram.core import LineClue, LineView
 
 
 class Rule:
+    cost = "MEDIUM"
+
     @staticmethod
     def apply(clues: LineClue, state: LineView) -> LineView:
         """Apply a rule that updates a line.

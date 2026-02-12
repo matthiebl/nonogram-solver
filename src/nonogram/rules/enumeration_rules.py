@@ -6,6 +6,8 @@ from nonogram.rules import Rule
 
 
 class EnumerationRule(Rule):
+    cost = "HIGH"
+
     @staticmethod
     def apply(clues: LineClue, state: LineView) -> LineView:
         possibilities = enumerate_possibilities(clues, state)
@@ -39,7 +41,7 @@ def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView,
         if any(state[i] not in (CellState.UNKNOWN, prefix[i]) for i in range(len(prefix))):
             continue
 
-        for tail in enumerate_possibilities(LineClue(rest), LineView(state[len(prefix):])):
+        for tail in enumerate_possibilities(LineClue(rest), LineView(state[len(prefix) :])):
             options.append(LineView(prefix + list(tail)))
 
     return tuple(options)
