@@ -23,6 +23,7 @@ dev = [
 
 [project.scripts]
 pixel = "pixelpuzzle.cli:main"
+nonogram = "nonogram.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = [
