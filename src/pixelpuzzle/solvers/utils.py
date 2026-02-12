@@ -81,20 +81,20 @@ def create_possibilities(clues: tuple[int], mask: str) -> tuple[str]:
 
 
 def increment_state(clues: tuple[int], state: str) -> str:
-    state = increment_state_from_edge(clues, state)
+    # state = increment_state_from_edge(clues, state)
 
-    i, j = state.index(Square.BLANK), state[::-1].index(Square.BLANK) - 1
+    # i, j = state.index(Square.BLANK), state[::-1].index(Square.BLANK) - 1
 
-    left = state[: state.index(Square.BLANK)]
-    right = state[:]
+    # left = state[: state.index(Square.BLANK)]
+    # right = state[:]
 
-    queue = deque(state)
-    left, right = "", ""
-    while queue[0] != Square.BLANK:
-        left += queue.popleft()
-    while queue[-1] != Square.BLANK:
-        right = queue.pop() + right
-    state = "".join(queue)
+    # queue = deque(state)
+    # left, right = "", ""
+    # while queue[0] != Square.BLANK:
+    #     left += queue.popleft()
+    # while queue[-1] != Square.BLANK:
+    #     right = queue.pop() + right
+    # state = "".join(queue)
 
     possibilities = create_possibilities(clues, state)
     if len(possibilities) == 0:
@@ -105,17 +105,13 @@ def increment_state(clues: tuple[int], state: str) -> str:
         for i, c in enumerate(option):
             probabilities[i][c] += 1
 
-    return (
-        left
-        + "".join(
-            Square.BLACK
-            if chance[Square.WHITE] == 0
-            else Square.WHITE
-            if chance[Square.BLACK] == 0
-            else Square.BLANK
-            for chance in probabilities.values()
-        )
-        + right
+    return "".join(
+        Square.BLACK
+        if chance[Square.WHITE] == 0
+        else Square.WHITE
+        if chance[Square.BLACK] == 0
+        else Square.BLANK
+        for chance in probabilities.values()
     )
 
 
