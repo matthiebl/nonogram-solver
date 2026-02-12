@@ -17,7 +17,7 @@ class LineSolver:
             LineView: The (potentially) updated line state.
         """
         prev: LineView | None = None
-        curr = state
+        curr = LineView(state)
 
         while curr != prev:
             prev = curr

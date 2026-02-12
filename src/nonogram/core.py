@@ -1,7 +1,8 @@
 from enum import StrEnum
 from typing import Any
 
-from nonogram.exceptions import CellConflictContradiction, LineTooShortContradiction
+from nonogram.exceptions import (CellConflictContradiction,
+                                 LineTooShortContradiction)
 
 
 class CellState(StrEnum):
@@ -23,7 +24,7 @@ class CellState(StrEnum):
 class LineClue(tuple[int]):
     def __init__(self, base: Any) -> None:
         if not isinstance(base, (tuple, list)) or not all(isinstance(x, int) for x in base):
-            raise TypeError("LineClue must be init as tuple[int] or list[int]")
+            raise TypeError(f"LineClue must be init as tuple[int] or list[int]: {base}")
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({', '.join(map(str, self))})"
@@ -34,7 +35,7 @@ class LineView(list[CellState]):
         if isinstance(base, str):
             super().__init__([CellState.of(cell) for cell in base])
         elif not isinstance(base, (tuple, list)) or not all(isinstance(x, CellState) for x in base):
-            raise TypeError("LineClue must be init as tuple[CellState] or list[CellState]")
+            raise TypeError(f"LineView must be init as tuple[CellState] or list[CellState]: {base}")
         else:
             super().__init__(base)
 

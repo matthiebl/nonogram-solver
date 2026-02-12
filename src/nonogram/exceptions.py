@@ -12,3 +12,7 @@ class CellConflictContradiction(Contradiction):
 
 class LineTooShortContradiction(Contradiction):
     pass
+
+
+class EnumerationContradiction(Contradiction):
+    pass
