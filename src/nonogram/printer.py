@@ -33,14 +33,14 @@ class RichObserver(EngineObserver):
         )
         self.layout["title"].update(Panel(Text("Solving " + puzzle.meta.get("title", "Nonogram"))))
         self.layout["progress"].update(Panel(Align(Text("Progress"), align="right"), expand=True))
-        self.layout["grid"].update(
-            Align(render_grid(puzzle.grid), align="center", vertical="middle")
-        )
+        self.layout["grid"].update(Align(render_grid(puzzle), align="center", vertical="middle"))
 
     def on_update(self) -> None:
         complete, total, percentage = get_grid_stats(self.puzzle.grid)
         elapsed = time.time() - self.start
-        time_str = f"{int(elapsed // 60):02d}:{elapsed % 60:02.3f}"
+        time_str = (
+            f"{int(elapsed // 60):02d}:{int(elapsed % 60):02d}.{int(elapsed * 1000 % 1000):03d}"
+        )
         self.layout["progress"].update(
             Panel(
                 Align(
@@ -54,7 +54,7 @@ class RichObserver(EngineObserver):
 
     def on_line_update(self, kind: str, index: int, old: LineView, new: LineView) -> None:
         self.layout["grid"].update(
-            Align(render_grid(self.puzzle.grid), align="center", vertical="middle")
+            Align(render_grid(self.puzzle), align="center", vertical="middle")
         )
         self.on_update()
 
@@ -83,14 +83,15 @@ def render_cell(cell: CellState) -> Text:
     return Text("  ")
 
 
-def render_grid(grid: Grid) -> Table:
+def render_grid(puzzle: PuzzleInput) -> Table:
     table = Table(show_header=False, box=None, padding=(0, 0))
 
-    for _ in range(grid.width):
+    for _ in range(puzzle.width):
         table.add_column(justify="center")
 
-    for row in grid.cells:
-        table.add_row(*[render_cell(c) for c in row])
+    for i, (clues, row) in enumerate(zip(puzzle.row_clues, puzzle.grid.cells), start=1):
+        clues = ""
+        table.add_row(Align(str(clues) + " |", align="right"), *[render_cell(c) for c in row], "|")
 
     return table
 
