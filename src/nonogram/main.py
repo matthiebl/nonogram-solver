@@ -4,9 +4,8 @@ from rich.console import Console
 from rich.live import Live
 
 from nonogram.parser import parse_nonogram
-from nonogram.printer import RichObserver, render_grid
-from nonogram.rules.edge_rules import EdgeWorkerRule
-from nonogram.rules.enumeration_rules import EnumerationRule
+from nonogram.printer import RichObserver
+from nonogram.rules.edge_rules import GlueEdgeRule, MercuryEdgeRule
 from nonogram.rules.overlap_rules import NeverBlackRule, OverlapRule
 from nonogram.rules.simple_rules import CompleteCluesRule
 from nonogram.solver.engine import PropagationEngine
@@ -15,17 +14,16 @@ from nonogram.solver.line_solver import LineSolver
 
 def solve_nonogram(path: str) -> None:
     puzzle = parse_nonogram(path)
-    line_solver = LineSolver(
-        rules=[
-            CompleteCluesRule(),
-            EdgeWorkerRule(),
-            OverlapRule(),
-            NeverBlackRule(),
-            EnumerationRule(),
-        ]
-    )
+    rules = [
+        CompleteCluesRule(),
+        GlueEdgeRule(),
+        MercuryEdgeRule(),
+        OverlapRule(),
+        NeverBlackRule(),
+    ]
+    line_solver = LineSolver(rules=rules)
 
-    console = Console()
+    Console()
     with Live(None, refresh_per_second=10) as live:
         observer = RichObserver(puzzle, live)
         engine = PropagationEngine(line_solver=line_solver, observer=observer)
