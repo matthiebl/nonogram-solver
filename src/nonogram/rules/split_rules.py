@@ -1,6 +1,5 @@
 from nonogram.core import CellState, LineClue, LineView
 from nonogram.rules import SplitRule
-from nonogram.rules.utils import black_runs
 
 
 class CompleteEdgeSplitRule(SplitRule):
@@ -45,7 +44,7 @@ def consume_complete_prefix(
     remaining_clues = list(clues)
 
     while remaining_clues:
-        while n and state[i] == CellState.WHITE:
+        while i < n and state[i] == CellState.WHITE:
             i += 1
 
         if i >= n or state[i] != CellState.BLACK:
@@ -56,10 +55,8 @@ def consume_complete_prefix(
             i += 1
         black_length = i - black_start
 
-        if black_length != clues[0]:
-            break
-
-        if i < n and state[i] != CellState.WHITE:
+        if black_length != remaining_clues[0] or i >= n or state[i] != CellState.WHITE:
+            i = black_start
             break
 
         consumed_clues.append(remaining_clues.pop(0))
