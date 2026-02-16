@@ -46,7 +46,9 @@ class NeverBlackRule(Rule):
         for i, can_be_black in enumerate(coverage):
             if not can_be_black:
                 if state[i] == CellState.BLACK:
-                    raise CellConflictContradiction("Overall suggests cell can never be black")
+                    raise CellConflictContradiction(
+                        "Overlap suggests cell can never be black", clues, state
+                    )
                 new[i] = CellState.WHITE
 
         return new
