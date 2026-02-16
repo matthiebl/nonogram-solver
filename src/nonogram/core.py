@@ -25,6 +25,9 @@ class LineClue(tuple[int]):
         if not isinstance(base, (tuple, list)) or not all(isinstance(x, int) for x in base):
             raise TypeError(f"LineClue must be init as tuple[int] or list[int]: {base}")
 
+    def __str__(self) -> str:
+        return " ".join(str(clue) for clue in self)
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}({', '.join(map(str, self))})"
 
