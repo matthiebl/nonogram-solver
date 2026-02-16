@@ -1,16 +1,14 @@
-from collections import defaultdict
 from math import comb
 
 from nonogram.core import LineClue, LineView
 from nonogram.rules import Rule
+from nonogram.rules.enumeration_rules import EnumerationRule
+from nonogram.rules.split_rules import CompleteEdgeSplitRule
 
 
 class LineSolver:
     def __init__(self, rules: list[Rule]):
         self.rules = rules
-
-        self.complexity_cache = defaultdict(lambda: 2_500_000)
-        self.retry_last_line = False
 
     def solve(self, clues: LineClue, state: LineView) -> LineView:
         """Solves as much of the given state as possible with the clues.
@@ -22,26 +20,25 @@ class LineSolver:
         Returns:
             LineView: The (potentially) updated line state.
         """
-        self.retry_last_line = False
+        solved_segments = []
+        segments = CompleteEdgeSplitRule.apply(clues, state)
 
-        prev: LineView | None = None
-        curr = LineView(state)
+        for segment_clues, segment in segments:
+            prev: LineView | None = None
+            curr = LineView(segment)
 
-        complexity = line_complexity(clues, len(state))
-        is_complex = False
-        if complexity > self.complexity_cache[(clues, len(state))]:
-            is_complex = True
-            self.complexity_cache[(clues, len(state))] *= 1.1
+            while curr != prev:
+                prev = curr
+                for rule in self.rules:
+                    curr = rule.apply(segment_clues, curr)
 
-        while curr != prev:
-            prev = curr
-            for rule in self.rules:
-                if is_complex and rule.cost == "HIGH":
-                    self.retry_last_line = True
-                    continue
-                curr = rule.apply(clues, curr)
+            complexity = line_complexity(segment_clues, len(segment))
+            if complexity < 50_000:
+                curr = EnumerationRule.apply(segment_clues, curr)
 
-        return curr
+            solved_segments.extend(curr.state())
+
+        return LineView(solved_segments)
 
 
 def line_complexity(clues: LineClue, length: int) -> float:

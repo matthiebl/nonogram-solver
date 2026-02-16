@@ -24,6 +24,9 @@ class EnumerationRule(Rule):
 
 @lru_cache(maxsize=10_000)
 def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView, ...]:
+    if state.is_complete():
+        return (state,)
+
     if not clues:
         if CellState.BLACK in state:
             return ()

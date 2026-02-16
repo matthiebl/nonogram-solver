@@ -46,13 +46,14 @@ class PropagationEngine:
                 updated_indices = [
                     i for i, (old, new) in enumerate(zip(line, new_line)) if old != new
                 ]
-                queue.extend([("col" if kind == "row" else "row", i) for i in updated_indices])
+                for updated_i in updated_indices:
+                    new_kind = "col" if kind == "row" else "row"
+                    if (new_kind, updated_i) in queue:
+                        queue.remove((new_kind, updated_i))
+                    queue.appendleft((new_kind, updated_i))
 
                 if self.observer:
                     self.observer.on_line_update(kind, index, line, new_line)
-
-            if self.line_solver.retry_last_line:
-                queue.append((kind, index))
 
         if grid.is_solved() and self.observer:
             self.observer.on_solved()
