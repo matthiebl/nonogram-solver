@@ -20,7 +20,7 @@ class Rule:
 
 class SplitRule:
     @staticmethod
-    def apply(clues: LineClue, state: LineView) -> list[tuple[LineClue, LineView]]:
+    def apply(clues: LineClue, state: LineView) -> tuple[tuple[LineClue, LineView]]:
         """Apply a splitting rule that strips clues and resolved
 
         Args:
