@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 from rich.align import Align
 from rich.layout import Layout
@@ -7,7 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from nonogram.core import CellState, Grid, LineView
+from nonogram.core import CellState, Grid, LineClue, LineView
 from nonogram.parser import PuzzleInput
 from nonogram.solver.observer import EngineObserver
 
@@ -79,21 +80,73 @@ def render_cell(cell: CellState) -> Text:
     if cell == CellState.BLACK:
         return Text("██")
     if cell == CellState.WHITE:
-        return Text("░░", style="grey30")
+        return Text("░░", style="grey50")
     return Text("  ")
 
 
-def render_grid(puzzle: PuzzleInput) -> Table:
+def render_grid(puzzle: PuzzleInput, image_only: bool = False) -> Table:
     table = Table(show_header=False, box=None, padding=(0, 0))
 
-    for _ in range(puzzle.width):
+    table_width = puzzle.width + (0 if image_only else puzzle.width // 5 + 1)
+    for _ in range(table_width):
         table.add_column(justify="center")
 
-    for i, (clues, row) in enumerate(zip(puzzle.row_clues, puzzle.grid.cells), start=1):
-        clues = ""
-        table.add_row(Align(str(clues) + " |", align="right"), *[render_cell(c) for c in row], "|")
+    if image_only:
+        for row in puzzle.grid.cells:
+            table.add_row(*render_row(None, row))
+    else:
+        for line in render_column_clues(puzzle.col_clues):
+            table.add_row(*line)
+
+        table.add_row(*render_blank_row(puzzle.width))
+        for i, (clues, row) in enumerate(zip(puzzle.row_clues, puzzle.grid.cells), start=1):
+            table.add_row(*render_row(clues, row))
+            if i % 5 == 0:
+                table.add_row(*render_blank_row(puzzle.width))
 
     return table
+
+
+def render_row(clues: LineClue | None, row: list[CellState]) -> list[Any]:
+    if clues is None:
+        return [render_cell(cell) for cell in row]
+
+    elements: list[Any] = [Align(str(clues) + " |", align="right")]
+    for i in range(0, len(row), 5):
+        elements.extend([render_cell(cell) for cell in row[i : i + 5]])
+        elements.append("|")
+    return elements
+
+
+def render_blank_row(puzzle_width: int) -> list[str]:
+    elements = [""]
+    for _ in range(puzzle_width // 5):
+        elements.extend(["--" for _ in range(5)])
+        elements.append("")
+    return elements
+
+
+def render_column_clues(col_clues: list[LineClue]) -> list[list[Any]]:
+    rows = []
+
+    longest_col_clues = max(len(clues) for clues in col_clues)
+    for row in range(longest_col_clues):
+        elements = [""]
+
+        for i, clues in enumerate(col_clues, start=1):
+            n = len(clues)
+            length_diff = longest_col_clues - n
+            clue_index = row - length_diff
+            if 0 <= clue_index < n:
+                elements.append(Align(str(clues[clue_index]), align="right"))
+            else:
+                elements.append("")
+            if i % 5 == 0:
+                elements.append("")
+
+        rows.append(elements)
+
+    return rows
 
 
 def get_grid_stats(grid: Grid) -> tuple[int, int, int]:
