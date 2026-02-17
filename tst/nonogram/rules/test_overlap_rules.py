@@ -2,27 +2,7 @@ import pytest
 
 from nonogram.core import LineClue, LineView
 from nonogram.exceptions import Contradiction
-from nonogram.rules.utils import black_runs, earliest_starts, latest_starts
-
-
-class TestBlackRuns:
-    @pytest.mark.parametrize(
-        "line, outcome",
-        [
-            ("", []),
-            (".", []),
-            (" ", []),
-            ("....", []),
-            ("###", [(0, 3)]),
-            ("# #", [(0, 1), (2, 1)]),
-            ("#.#", [(0, 1), (2, 1)]),
-            ("#..", [(0, 1)]),
-            (" #.", [(1, 1)]),
-            (" ###  .. #.. ##.   #", [(1, 3), (9, 1), (13, 2), (19, 1)]),
-        ],
-    )
-    def test_basic_usage(self, line, outcome):
-        assert black_runs(LineView(line)) == outcome
+from nonogram.rules.overlap_rules import earliest_starts, latest_starts
 
 
 class TestEarliestStarts:
