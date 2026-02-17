@@ -3,7 +3,6 @@ from math import comb
 from nonogram.core import LineClue, LineView
 from nonogram.rules import Rule
 from nonogram.rules.enumeration_rules import EnumerationRule
-from nonogram.rules.split_rules import CompleteEdgeSplitRule
 
 
 class LineSolver:
@@ -20,25 +19,19 @@ class LineSolver:
         Returns:
             LineView: The (potentially) updated line state.
         """
-        solved_segments = []
-        segments = CompleteEdgeSplitRule.apply(clues, state)
+        prev: LineView | None = None
+        curr = LineView(state)
 
-        for segment_clues, segment in segments:
-            prev: LineView | None = None
-            curr = LineView(segment)
+        while curr != prev:
+            prev = curr
+            for rule in self.rules:
+                curr = rule.apply(clues, curr)
 
-            while curr != prev:
-                prev = curr
-                for rule in self.rules:
-                    curr = rule.apply(segment_clues, curr)
+        complexity = line_complexity(clues, len(curr))
+        if complexity < 50_000:
+            curr = EnumerationRule.apply(clues, curr)
 
-            complexity = line_complexity(segment_clues, len(segment))
-            if complexity < 50_000:
-                curr = EnumerationRule.apply(segment_clues, curr)
-
-            solved_segments.extend(curr.state())
-
-        return LineView(solved_segments)
+        return curr
 
 
 def line_complexity(clues: LineClue, length: int) -> float:

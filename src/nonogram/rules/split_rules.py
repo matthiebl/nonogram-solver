@@ -3,8 +3,7 @@ from nonogram.rules import SplitRule
 
 
 class CompleteEdgeSplitRule(SplitRule):
-    @staticmethod
-    def apply(clues: LineClue, state: LineView) -> tuple[tuple[LineClue, LineView]]:
+    def split(self, clues: LineClue, state: LineView) -> tuple[tuple[LineClue, LineView], ...]:
         if state.is_complete() or not clues:
             return ((clues, state),)
 
@@ -27,6 +26,12 @@ class CompleteEdgeSplitRule(SplitRule):
             splits.append((LineClue(right_clues[::-1]), LineView(right_state[::-1])))
 
         return tuple(splits)
+
+    def merge(self, segments: tuple[LineView, ...]) -> LineView:
+        merged = []
+        for segment in segments:
+            merged.extend(segment)
+        return LineView(merged)
 
 
 def consume_complete_prefix(

@@ -8,8 +8,9 @@ from nonogram.printer import RichObserver
 from nonogram.rules.edge_rules import GlueEdgeRule, MercuryEdgeRule
 from nonogram.rules.overlap_rules import NeverBlackRule, OverlapRule
 from nonogram.rules.simple_rules import CompleteCluesRule
+from nonogram.rules.split_rules import CompleteEdgeSplitRule
 from nonogram.solver.engine import PropagationEngine
-from nonogram.solver.line_solver import LineSolver
+from nonogram.solver.split_line_solver import SplitLineSolver
 
 
 def solve_nonogram(path: str) -> None:
@@ -21,13 +22,17 @@ def solve_nonogram(path: str) -> None:
         OverlapRule(),
         NeverBlackRule(),
     ]
-    line_solver = LineSolver(rules=rules)
+    split_rules = [
+        CompleteEdgeSplitRule(),
+    ]
+    line_solver = SplitLineSolver(rules=rules, split_rules=split_rules)
 
     Console()
     with Live(None, refresh_per_second=10) as live:
         observer = RichObserver(puzzle, live)
         engine = PropagationEngine(line_solver=line_solver, observer=observer)
-        engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
+        while engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues):
+            pass
 
 
 def main() -> None:
