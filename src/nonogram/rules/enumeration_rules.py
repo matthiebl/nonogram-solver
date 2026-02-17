@@ -1,4 +1,5 @@
 from functools import lru_cache
+from math import comb
 
 from nonogram.core import CellState, LineClue, LineView
 from nonogram.exceptions import EnumerationContradiction
@@ -10,6 +11,10 @@ class EnumerationRule(Rule):
 
     @staticmethod
     def apply(clues: LineClue, state: LineView) -> LineView:
+        complexity = line_complexity(clues, len(state))
+        if complexity > 50_000:
+            return state
+
         possibilities = enumerate_possibilities(clues, state)
         if not possibilities:
             raise EnumerationContradiction(f"Cannot enumerate {clues}: {state}")
@@ -48,3 +53,13 @@ def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView,
             options.append(LineView(prefix + list(tail)))
 
     return tuple(options)
+
+
+def line_complexity(clues: LineClue, length: int) -> float:
+    k = len(clues)
+    if k == 0:
+        return 1
+    slack = length - (sum(clues) + k - 1)
+    if slack < 0:
+        return float("inf")
+    return comb(slack + k, k)

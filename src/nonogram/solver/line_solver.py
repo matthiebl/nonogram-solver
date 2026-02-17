@@ -1,8 +1,5 @@
-from math import comb
-
 from nonogram.core import LineClue, LineView
 from nonogram.rules import Rule
-from nonogram.rules.enumeration_rules import EnumerationRule
 
 
 class LineSolver:
@@ -27,18 +24,4 @@ class LineSolver:
             for rule in self.rules:
                 curr = rule.apply(clues, curr)
 
-        complexity = line_complexity(clues, len(curr))
-        if complexity < 50_000:
-            curr = EnumerationRule.apply(clues, curr)
-
         return curr
-
-
-def line_complexity(clues: LineClue, length: int) -> float:
-    k = len(clues)
-    if k == 0:
-        return 1
-    slack = length - (sum(clues) + k - 1)
-    if slack < 0:
-        return float("inf")
-    return comb(slack + k, k)
