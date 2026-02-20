@@ -1,6 +1,7 @@
 from nonogram.core import CellState, LineClue, LineView
 from nonogram.exceptions import CellConflictContradiction, LineTooShortContradiction
 from nonogram.rules import Rule
+from nonogram.rules.simple_rules import black_runs
 
 
 class OverlapRule(Rule):
@@ -63,21 +64,51 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
     Returns:
         list[int]: A list of earliest indices for the left of each clue
     """
+
+    runs = black_runs(state)
+    run_idx = 0
     starts = []
     pos = 0
+
     for clue in clues:
         while True:
             if pos + clue > len(state):
-                raise LineTooShortContradiction(pos, clue, len(state))
-            if (
-                all(state[pos + i] in (CellState.BLACK, CellState.UNKNOWN) for i in range(clue))
-                and (pos == 0 or state[pos - 1] != CellState.BLACK)
-                and (pos + clue == len(state) or state[pos + clue] != CellState.BLACK)
+                raise LineTooShortContradiction()
+
+            if any(state[i] == CellState.WHITE for i in range(pos, pos + clue)):
+                pos += 1
+                continue
+
+            segment = (pos, pos + clue)
+            intersecting = list(runs_intersecting(runs, *segment))
+
+            # Reject partial run coverage
+            if any(
+                not (pos <= r_start and r_start + r_len <= pos + clue)
+                for r_start, r_len in intersecting
             ):
-                break
-            pos += 1
+                pos += 1
+                continue
+
+            # Reject if touching black outside segment
+            if (pos > 0 and state[pos - 1] == CellState.BLACK) or (
+                pos + clue < len(state) and state[pos + clue] == CellState.BLACK
+            ):
+                pos += 1
+                continue
+
+            # Accept placement
+            break
 
         starts.append(pos)
+
+        # Consume fully covered runs
+        while run_idx < len(runs):
+            r_start, r_len = runs[run_idx]
+            if r_start >= pos + clue:
+                break
+            run_idx += 1
+
         pos += clue + 1
 
     return starts
@@ -93,23 +124,27 @@ def latest_starts(clues: LineClue, state: LineView) -> list[int]:
     Returns:
         list[int]: A list of latest indices for the left of each clue
     """
-    starts = []
-    pos = len(state)
+    n = len(state)
 
-    for clue in reversed(clues):
-        pos -= clue
-        while True:
-            if pos < 0:
-                raise LineTooShortContradiction()
-            if (
-                all(state[pos + i] in (CellState.BLACK, CellState.UNKNOWN) for i in range(clue))
-                and (pos + clue == len(state) or state[pos + clue] != CellState.BLACK)
-                and (pos == 0 or state[pos - 1] != CellState.BLACK)
-            ):
-                break
-            pos -= 1
+    # Reverse everything
+    rev_state = LineView(state[::-1])
+    rev_clues = LineClue(clues[::-1])
+    rev_starts = earliest_starts(rev_clues, rev_state)
 
-        starts.append(pos)
-        pos -= 1
+    # Map reversed starts back to original indices
+    return [n - (start + clue) for start, clue in zip(rev_starts, rev_clues)][::-1]
 
-    return list(reversed(starts))
+
+def runs_intersecting(runs: list[tuple[int, int]], start: int, end: int):
+    """Returns runs that intersect [start, end)."""
+    for r_start, r_len in runs:
+        r_end = r_start + r_len
+        if not (r_end <= start or r_start >= end):
+            yield (r_start, r_len)
+
+
+def is_closed_run(state: LineView, start: int, length: int) -> bool:
+    left_closed = start == 0 or state[start - 1] == CellState.WHITE
+    right_end = start + length
+    right_closed = right_end == len(state) or state[right_end] == CellState.WHITE
+    return left_closed and right_closed
