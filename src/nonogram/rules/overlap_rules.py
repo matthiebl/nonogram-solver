@@ -54,6 +54,55 @@ class NeverBlackRule(Rule):
         return new
 
 
+class MinimumLengthExpansionRule(Rule):
+    @staticmethod
+    def apply(clues: LineClue, state: LineView) -> LineView:
+        n = len(state)
+        new_state = LineView(state)
+
+        if not clues or state.is_complete():
+            return new_state
+
+        earliest = earliest_starts(clues, state)
+        latest = latest_starts(clues, state)
+
+        runs = black_runs(state)
+
+        for run_start, run_len in runs:
+            left_bounded = run_start == 0 or state[run_start - 1] == CellState.WHITE
+            right_end = run_start + run_len
+            right_bounded = right_end == n or state[right_end] == CellState.WHITE
+
+            if not (left_bounded or right_bounded) or (left_bounded and right_bounded):
+                continue
+
+            # Find candidate clue(s) that could cover this run
+            possible_clues = set()
+            for i, clue_len in enumerate(clues):
+                s_earliest = earliest[i]
+                s_latest = latest[i]
+                if s_earliest <= run_start <= s_latest + clue_len - 1:
+                    possible_clues.add(clues[i])
+
+            if not possible_clues:
+                continue
+
+            required_length = min(possible_clues)
+            start = run_start if left_bounded else run_start + run_len - required_length
+            for i in range(start, start + required_length):
+                if i >= n or new_state[i] == CellState.WHITE:
+                    raise CellConflictContradiction()
+                new_state[i] = CellState.BLACK
+
+            if len(possible_clues) == 1:
+                if start - 1 >= 0:
+                    new_state[start - 1] = CellState.WHITE
+                if start + required_length < n:
+                    new_state[start + required_length] = CellState.WHITE
+
+        return new_state
+
+
 def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
     """Returns the indices of the earliest start to each clue.
     Ignores some aspects of current cells, other than completely impossible
