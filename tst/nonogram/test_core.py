@@ -1,7 +1,6 @@
 import pytest
 
 from nonogram.core import CellState, Grid, LineClue, LineView
-from nonogram.exceptions import Contradiction
 
 
 class TestCellState:

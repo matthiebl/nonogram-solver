@@ -6,7 +6,7 @@ from nonogram.rules.simple_rules import black_runs
 
 class TestBlackRuns:
     @pytest.mark.parametrize(
-        "line, outcome",
+        "state, expected",
         [
             ("", []),
             (".", []),
@@ -20,5 +20,5 @@ class TestBlackRuns:
             (" ###  .. #.. ##.   #", [(1, 3), (9, 1), (13, 2), (19, 1)]),
         ],
     )
-    def test_basic_usage(self, line, outcome):
-        assert black_runs(LineView(line)) == outcome
+    def test_basic_usage(self, state, expected):
+        assert black_runs(LineView(state)) == expected

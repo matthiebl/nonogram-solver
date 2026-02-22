@@ -3,17 +3,30 @@ from nonogram.rules import Rule
 from nonogram.rules.edge_rules import EdgeRule
 
 
+def assert_state(actual: LineView, expected: LineView) -> None:
+    assert actual == expected, f'"{actual}" != "{expected}"'
+
+
+def assert_state_at_least(actual: LineView, expected: LineView) -> None:
+    assert all(b == CellState.UNKNOWN or a == b for a, b in zip(actual, expected)), (
+        f'"{actual}" !>= "{expected}"'
+    )
+
+
 class RuleTester:
     def __init__(self, rule: Rule):
         self.rule = rule
 
     def assert_apply(self, clues: tuple[int, ...], initial: str, expected: str) -> None:
-        assert self.rule.apply(LineClue(clues), LineView(initial)) == LineView(expected)
+        assert_state(
+            actual=self.rule.apply(LineClue(clues), LineView(initial)),
+            expected=LineView(expected),
+        )
 
     def assert_apply_at_least(self, clues: tuple[int, ...], initial: str, expected: str) -> None:
         """Checks that `initial` is solved at least as much as `expected`."""
         actual = self.rule.apply(LineClue(clues), LineView(initial))
-        assert all(b == CellState.UNKNOWN or a == b for a, b in zip(actual, LineView(expected)))
+        assert_state_at_least(actual, LineView(expected))
 
 
 class EdgeRuleTester(RuleTester):
@@ -23,8 +36,9 @@ class EdgeRuleTester(RuleTester):
     def assert_apply_left_to_right(
         self, clues: tuple[int, ...], initial: str, expected: str
     ) -> None:
-        assert self.rule.apply_left_to_right(LineClue(clues), LineView(initial)) == LineView(
-            expected
+        assert_state(
+            actual=self.rule.apply_left_to_right(LineClue(clues), LineView(initial)),
+            expected=LineView(expected),
         )
 
     def assert_apply_left_to_right_at_least(
@@ -32,4 +46,4 @@ class EdgeRuleTester(RuleTester):
     ) -> None:
         """Checks that `initial` is solved at least as much as `expected`."""
         actual = self.rule.apply_left_to_right(LineClue(clues), LineView(initial))
-        assert all(b == CellState.UNKNOWN or a == b for a, b in zip(actual, LineView(expected)))
+        assert_state_at_least(actual, LineView(expected))

@@ -2,7 +2,8 @@ import pytest
 
 from nonogram.core import LineClue, LineView
 from nonogram.exceptions import Contradiction
-from nonogram.rules.overlap_rules import earliest_starts, latest_starts
+from nonogram.rules.overlap_rules import MinimumLengthExpansionRule, earliest_starts, latest_starts
+from tst.nonogram.utils import RuleTester
 
 
 class TestEarliestStarts:
@@ -79,3 +80,41 @@ class TestLatestStarts:
     def test_contradictions(self, clues, line):
         with pytest.raises(Contradiction):
             latest_starts(LineClue(clues), LineView(line))
+
+
+class TestMinimumLengthExpansionRule:
+    tester = RuleTester(MinimumLengthExpansionRule)
+
+    @pytest.mark.parametrize(
+        "clues, state, expected",
+        [
+            ((3,), "     ", "     "),
+            ((3,), " #   ", " #   "),
+            ((3,), ". #  ", ". #  "),
+            ((3,), "  # .", "  # ."),
+            ((3,), "   #.", ".###."),
+            ((3,), "  ##.", ".###."),
+            ((3,), ".#   ", ".###."),
+            ((3,), ".##  ", ".###."),
+            ((3,), "     . #      ", "     . #      "),
+            ((3,), "     .#       ", "     .###.    "),
+            ((3,), "     .##      ", "     .###.    "),
+            ((3,), "      #.      ", "   .###.      "),
+        ],
+    )
+    def test_apply(self, clues, state, expected):
+        self.tester.assert_apply(clues, state, expected)
+
+    @pytest.mark.parametrize(
+        "clues, state, expected",
+        [
+            ((2, 2, 2, 2, 5), "   .#  .#  .# ..##.   .#####..", "   .## .## .##..##.   .#####.."),
+            (
+                (2, 2, 2, 1, 2, 3),
+                "                .#     .###...",
+                "                .#     .###...",
+            ),
+        ],
+    )
+    def test_real_examples(self, clues, state, expected):
+        self.tester.assert_apply_at_least(clues, state, expected)
