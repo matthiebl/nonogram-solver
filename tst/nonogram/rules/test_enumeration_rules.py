@@ -20,6 +20,11 @@ class TestEnumerationRule:
         "clues, state, expected",
         [
             ((5, 1, 8, 1), "                     #   #   .", "                   ###   #   ."),
+            (
+                (2, 2, 2, 1, 2, 3),
+                "    .##..##..# ..#  .##.###...",
+                ".....##..##..##..#...##.###...",
+            ),
         ],
     )
     def test_real_examples(self, clues, state, expected):

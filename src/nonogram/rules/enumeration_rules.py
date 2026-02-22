@@ -35,7 +35,7 @@ def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView,
         return (LineView([CellState.WHITE] * len(state)),)
 
     if state.is_complete():
-        if CellState.BLACK not in state:
+        if state.count(CellState.BLACK) != sum(clues):
             return ()
         return (state,)
 
