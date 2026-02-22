@@ -14,7 +14,9 @@ from nonogram.solver.observer import EngineObserver
 
 
 class RichObserver(EngineObserver):
-    def __init__(self, puzzle: PuzzleInput, live: Live) -> None:
+    def __init__(self, puzzle: PuzzleInput, live: Live, show_clues: bool = True) -> None:
+        self.image_only = not show_clues
+
         self.start = time.time()
         self.rows = 0
         self.cols = 0
@@ -55,7 +57,11 @@ class RichObserver(EngineObserver):
 
     def on_line_update(self, kind: str, index: int, old: LineView, new: LineView) -> None:
         self.layout["grid"].update(
-            Align(render_grid(self.puzzle), align="center", vertical="middle")
+            Align(
+                render_grid(self.puzzle, image_only=self.image_only),
+                align="center",
+                vertical="middle",
+            )
         )
         self.on_update()
 
