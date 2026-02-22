@@ -1,7 +1,8 @@
 import pytest
 
 from nonogram.core import LineView
-from nonogram.rules.simple_rules import black_runs
+from nonogram.rules.simple_rules import CompleteCluesRule, FirstClueGapRule, black_runs
+from tst.nonogram.utils import RuleTester
 
 
 class TestBlackRuns:
@@ -22,3 +23,39 @@ class TestBlackRuns:
     )
     def test_basic_usage(self, state, expected):
         assert black_runs(LineView(state)) == expected
+
+
+class TestCompleteCluesRule:
+    tester = RuleTester(CompleteCluesRule)
+
+    @pytest.mark.parametrize(
+        "clues, state, expected",
+        [
+            ((1,), "      ", "      "),
+            ((1,), " #    ", ".#...."),
+            ((1,), " #.  .", ".#...."),
+            ((2,), " ##   ", ".##..."),
+            ((2,), " ##   ", ".##..."),
+            ((2, 1), " ##    # ", ".##....#."),
+        ],
+    )
+    def test_apply(self, clues, state, expected):
+        self.tester.assert_apply(clues, state, expected)
+
+
+class TestFirstClueGapRule:
+    tester = RuleTester(FirstClueGapRule)
+
+    @pytest.mark.parametrize(
+        "clues, state, expected",
+        [
+            ((1,), " #       ", " #       "),
+            ((1,), "  #       ", " .#       "),
+            ((1,), "       #  ", "       #. "),
+            ((2,), "   ##     ", "  .##     "),
+            ((2,), "     ##   ", "     ##.  "),
+            ((1, 3), "  # #     ", " .# #     "),
+        ],
+    )
+    def test_apply(self, clues, state, expected):
+        self.tester.assert_apply(clues, state, expected)

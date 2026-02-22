@@ -6,21 +6,26 @@ from rich.live import Live
 from nonogram.parser import parse_nonogram
 from nonogram.printer import RichObserver
 from nonogram.rules.edge_rules import GlueEdgeRule, MercuryEdgeRule
-from nonogram.rules.overlap_rules import NeverBlackRule, OverlapRule
-from nonogram.rules.simple_rules import CompleteCluesRule
+from nonogram.rules.overlap_rules import MinimumLengthExpansionRule, NeverBlackRule, OverlapRule
+from nonogram.rules.simple_rules import CompleteCluesRule, FirstClueGapRule
 from nonogram.rules.split_rules import CompleteEdgeSplitRule
 from nonogram.solver.engine import PropagationEngine
 from nonogram.solver.split_line_solver import SplitLineSolver
+
+# from nonogram.rules.enumeration_rules import EnumerationRule
 
 
 def solve_nonogram(path: str) -> None:
     puzzle = parse_nonogram(path)
     rules = [
         CompleteCluesRule(),
+        OverlapRule(),
         GlueEdgeRule(),
         MercuryEdgeRule(),
-        OverlapRule(),
+        FirstClueGapRule(),
+        MinimumLengthExpansionRule(),
         NeverBlackRule(),
+        CompleteCluesRule(),
     ]
     split_rules = [
         CompleteEdgeSplitRule(),
@@ -31,8 +36,7 @@ def solve_nonogram(path: str) -> None:
     with Live(None, refresh_per_second=10) as live:
         observer = RichObserver(puzzle, live)
         engine = PropagationEngine(line_solver=line_solver, observer=observer)
-        while engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues):
-            pass
+        engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
 
 
 def main() -> None:

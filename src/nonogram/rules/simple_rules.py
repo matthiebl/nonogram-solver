@@ -18,6 +18,31 @@ class CompleteCluesRule(Rule):
         return new
 
 
+class FirstClueGapRule(Rule):
+    @staticmethod
+    def apply(clues: LineClue, state: LineView) -> LineView:
+        runs = black_runs(state)
+
+        if not runs or not clues or state.is_complete():
+            return state
+
+        new = LineView(state)
+
+        first_clue = clues[0]
+        pos, length = runs[0]
+        white = pos
+        if first_clue == white - 1 == length:
+            new[pos - 1] = CellState.WHITE
+
+        last_clue = clues[-1]
+        pos, length = runs[-1]
+        white = len(state) - (pos + length)
+        if last_clue == white - 1 == length:
+            new[pos + length] = CellState.WHITE
+
+        return new
+
+
 def black_runs(state: LineView) -> list[tuple[int, int]]:
     """Returns a list of the sequences of black cells.
 
