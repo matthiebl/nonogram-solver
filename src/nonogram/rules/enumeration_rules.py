@@ -29,13 +29,15 @@ class EnumerationRule(Rule):
 
 @lru_cache(maxsize=10_000)
 def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView, ...]:
-    if state.is_complete():
-        return (state,)
-
     if not clues:
         if CellState.BLACK in state:
             return ()
         return (LineView([CellState.WHITE] * len(state)),)
+
+    if state.is_complete():
+        if CellState.BLACK not in state:
+            return ()
+        return (state,)
 
     options = []
     clue, *rest = list(clues)
