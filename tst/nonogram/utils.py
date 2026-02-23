@@ -3,14 +3,16 @@ from nonogram.rules import Rule
 from nonogram.rules.edge_rules import EdgeRule
 
 
-def assert_state(actual: LineView, expected: LineView) -> None:
+def assert_state(actual: LineView, expected: LineView) -> bool:
     assert actual == expected, f'"{actual}" != "{expected}"'
+    return True
 
 
-def assert_state_at_least(actual: LineView, expected: LineView) -> None:
+def assert_state_at_least(actual: LineView, expected: LineView) -> bool:
     assert all(b == CellState.UNKNOWN or a == b for a, b in zip(actual, expected)), (
         f'"{actual}" !>= "{expected}"'
     )
+    return True
 
 
 class RuleTester:
