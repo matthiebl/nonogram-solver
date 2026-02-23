@@ -1,10 +1,14 @@
+from collections.abc import Callable
+
 from nonogram.core import CellState, LineClue, LineView
 from nonogram.exceptions import CellConflictContradiction
 from nonogram.rules import Rule
 
 
-def mirror_rule(rule):
-    def mirrored(clues: LineClue, state: LineView):
+def mirror_rule(
+    rule: Callable[[LineClue, LineView], LineView],
+) -> Callable[[LineClue, LineView], LineView]:
+    def mirrored(clues: LineClue, state: LineView) -> LineView:
         new = rule(LineClue(clues[::-1]), LineView(state[::-1]))
         return LineView(new[::-1])
 

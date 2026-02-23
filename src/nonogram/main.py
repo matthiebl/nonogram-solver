@@ -17,20 +17,22 @@ from nonogram.solver.split_line_solver import SplitLineSolver
 
 def solve_nonogram(path: str) -> None:
     puzzle = parse_nonogram(path)
-    rules = [
-        CompleteCluesRule(),
-        OverlapRule(),
-        GlueEdgeRule(),
-        MercuryEdgeRule(),
-        FirstClueGapRule(),
-        MinimumLengthExpansionRule(),
-        NeverBlackRule(),
-        CompleteCluesRule(),
-    ]
-    split_rules = [
-        CompleteEdgeSplitRule(),
-    ]
-    line_solver = SplitLineSolver(rules=rules, split_rules=split_rules)
+
+    line_solver = SplitLineSolver(
+        rules=[
+            CompleteCluesRule(),
+            OverlapRule(),
+            GlueEdgeRule(),
+            MercuryEdgeRule(),
+            FirstClueGapRule(),
+            MinimumLengthExpansionRule(),
+            NeverBlackRule(),
+            CompleteCluesRule(),
+        ],
+        split_rules=[
+            CompleteEdgeSplitRule(),
+        ],
+    )
 
     Console()
     with Live(None, refresh_per_second=10) as live:

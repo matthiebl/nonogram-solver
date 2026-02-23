@@ -28,7 +28,7 @@ class CompleteEdgeSplitRule(SplitRule):
         return tuple(splits)
 
     def merge(self, segments: tuple[LineView, ...]) -> LineView:
-        merged = []
+        merged: list[CellState] = []
         for segment in segments:
             merged.extend(segment)
         return LineView(merged)

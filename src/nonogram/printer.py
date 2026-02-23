@@ -137,7 +137,7 @@ def render_column_clues(col_clues: list[LineClue]) -> list[list[Any]]:
 
     longest_col_clues = max(len(clues) for clues in col_clues)
     for row in range(longest_col_clues):
-        elements = [""]
+        elements: list[Any] = [""]
 
         for i, clues in enumerate(col_clues, start=1):
             n = len(clues)
@@ -155,7 +155,7 @@ def render_column_clues(col_clues: list[LineClue]) -> list[list[Any]]:
     return rows
 
 
-def get_grid_stats(grid: Grid) -> tuple[int, int, int]:
+def get_grid_stats(grid: Grid) -> tuple[int, int, float]:
     complete = sum(cell != CellState.UNKNOWN for row in grid.cells for cell in row)
     total = grid.width * grid.height
     return complete, total, round(complete / total * 100, 1)

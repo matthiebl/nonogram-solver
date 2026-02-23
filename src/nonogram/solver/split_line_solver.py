@@ -8,7 +8,7 @@ class SplitLineSolver(LineSolver):
         super().__init__(rules)
         self.split_rules = split_rules
 
-    def solve(self, clues: LineClue, state: LineView):
+    def solve(self, clues: LineClue, state: LineView) -> LineView:
         curr = super().solve(clues, state)
 
         if curr.is_complete():
