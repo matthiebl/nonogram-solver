@@ -114,8 +114,6 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
         list[int]: A list of earliest indices for the left of each clue
     """
 
-    runs = black_runs(state)
-    run_idx = 0
     starts = []
     pos = 0
 
@@ -124,24 +122,10 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
             if pos + clue > len(state):
                 raise LineTooShortContradiction()
 
-            if any(state[i] == CellState.WHITE for i in range(pos, pos + clue)):
-                pos += 1
-                continue
-
-            segment = (pos, pos + clue)
-            intersecting = list(runs_intersecting(runs, *segment))
-
-            # Reject partial run coverage
-            if any(
-                not (pos <= r_start and r_start + r_len <= pos + clue)
-                for r_start, r_len in intersecting
-            ):
-                pos += 1
-                continue
-
-            # Reject if touching black outside segment
-            if (pos > 0 and state[pos - 1] == CellState.BLACK) or (
-                pos + clue < len(state) and state[pos + clue] == CellState.BLACK
+            if (
+                any(state[i] == CellState.WHITE for i in range(pos, pos + clue))
+                or (pos > 0 and state[pos - 1] == CellState.BLACK)
+                or (pos + clue < len(state) and state[pos + clue] == CellState.BLACK)
             ):
                 pos += 1
                 continue
@@ -150,14 +134,6 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
             break
 
         starts.append(pos)
-
-        # Consume fully covered runs
-        while run_idx < len(runs):
-            r_start, r_len = runs[run_idx]
-            if r_start >= pos + clue:
-                break
-            run_idx += 1
-
         pos += clue + 1
 
     return starts
@@ -182,18 +158,3 @@ def latest_starts(clues: LineClue, state: LineView) -> list[int]:
 
     # Map reversed starts back to original indices
     return [n - (start + clue) for start, clue in zip(rev_starts, rev_clues)][::-1]
-
-
-def runs_intersecting(runs: list[tuple[int, int]], start: int, end: int):
-    """Returns runs that intersect [start, end)."""
-    for r_start, r_len in runs:
-        r_end = r_start + r_len
-        if not (r_end <= start or r_start >= end):
-            yield (r_start, r_len)
-
-
-def is_closed_run(state: LineView, start: int, length: int) -> bool:
-    left_closed = start == 0 or state[start - 1] == CellState.WHITE
-    right_end = start + length
-    right_closed = right_end == len(state) or state[right_end] == CellState.WHITE
-    return left_closed and right_closed
