@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from nonogram.core import CellState, Grid, LineClue, LineView
+from nonogram.core import Cell, Clues, Grid, LineState
 from nonogram.parser import PuzzleInput
 from nonogram.solver.observer import EngineObserver
 
@@ -55,7 +55,7 @@ class RichObserver(EngineObserver):
         )
         self.live.update(self.layout)
 
-    def on_line_update(self, kind: str, index: int, old: LineView, new: LineView) -> None:
+    def on_line_update(self, kind: str, index: int, old: LineState, new: LineState) -> None:
         self.layout["grid"].update(
             Align(
                 render_grid(self.puzzle, image_only=self.image_only),
@@ -81,11 +81,11 @@ class RichObserver(EngineObserver):
         self.on_update()
 
 
-def render_cell(cell: CellState) -> Text:
+def render_cell(cell: Cell) -> Text:
     """Full range of shades: █ ▓ ▒ ░"""
-    if cell == CellState.BLACK:
+    if cell == Cell.BOX:
         return Text("██")
-    if cell == CellState.WHITE:
+    if cell == Cell.CROSS:
         return Text("░░", style="grey50")
     return Text("  ")
 
@@ -113,7 +113,7 @@ def render_grid(puzzle: PuzzleInput, image_only: bool = False) -> Table:
     return table
 
 
-def render_row(clues: LineClue | None, row: list[CellState]) -> list[Any]:
+def render_row(clues: Clues | None, row: list[Cell]) -> list[Any]:
     if clues is None:
         return [render_cell(cell) for cell in row]
 
@@ -132,7 +132,7 @@ def render_blank_row(puzzle_width: int) -> list[str]:
     return elements
 
 
-def render_column_clues(col_clues: list[LineClue]) -> list[list[Any]]:
+def render_column_clues(col_clues: list[Clues]) -> list[list[Any]]:
     rows = []
 
     longest_col_clues = max(len(clues) for clues in col_clues)
@@ -156,6 +156,6 @@ def render_column_clues(col_clues: list[LineClue]) -> list[list[Any]]:
 
 
 def get_grid_stats(grid: Grid) -> tuple[int, int, float]:
-    complete = sum(cell != CellState.UNKNOWN for row in grid.cells for cell in row)
+    complete = sum(cell != Cell.UNKNOWN for row in grid.cells for cell in row)
     total = grid.width * grid.height
     return complete, total, round(complete / total * 100, 1)

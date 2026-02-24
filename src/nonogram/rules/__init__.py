@@ -1,11 +1,11 @@
-from nonogram.core import LineClue, LineView
+from nonogram.core import Clues, LineState
 
 
 class Rule:
     cost = "MEDIUM"
 
     @staticmethod
-    def apply(clues: LineClue, state: LineView) -> LineView:
+    def apply(clues: Clues, state: LineState) -> LineState:
         """Apply a rule that updates a line.
 
         Args:
@@ -19,7 +19,7 @@ class Rule:
 
 
 class SplitRule:
-    def split(self, clues: LineClue, state: LineView) -> tuple[tuple[LineClue, LineView], ...]:
+    def split(self, clues: Clues, state: LineState) -> tuple[tuple[Clues, LineState], ...]:
         """Apply a splitting rule that reduces the state into segments
 
         Args:
@@ -31,7 +31,7 @@ class SplitRule:
         """
         raise NotImplementedError()
 
-    def merge(self, segments: tuple[LineView, ...]) -> LineView:
+    def merge(self, segments: tuple[LineState, ...]) -> LineState:
         """Merge the segments of state this rule broke up
 
         Args:

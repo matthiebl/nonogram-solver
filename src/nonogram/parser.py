@@ -20,7 +20,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from nonogram.core import Grid, LineClue, LineView
+from nonogram.core import Clues, Grid, LineState
 
 
 class ParseError(Exception):
@@ -32,8 +32,8 @@ class PuzzleInput:
     meta: dict[str, Any]
     width: int
     height: int
-    row_clues: list[LineClue]
-    col_clues: list[LineClue]
+    row_clues: list[Clues]
+    col_clues: list[Clues]
     grid: Grid
 
 
@@ -44,8 +44,8 @@ def parse_nonogram(path: str) -> PuzzleInput:
     try:
         width = int(data["width"])
         height = int(data["height"])
-        row_clues = [LineClue(row) for row in data["rows"]]
-        col_clues = [LineClue(col) for col in data["cols"]]
+        row_clues = [Clues(row) for row in data["rows"]]
+        col_clues = [Clues(col) for col in data["cols"]]
 
         grid = Grid(width, height)
         if "grid" in data:
@@ -54,7 +54,7 @@ def parse_nonogram(path: str) -> PuzzleInput:
             if any(len(row) != width for row in data["grid"]):
                 raise ParseError("Provided grid width does not match width")
             for i, row in enumerate(data["grid"]):
-                grid.apply_row(i, LineView(row))
+                grid.apply_row(i, LineState(row))
 
     except KeyError as e:
         raise ParseError(f"Missing required field: {e}")

@@ -1,4 +1,4 @@
-from nonogram.core import CellState, LineClue, LineView
+from nonogram.core import Cell, Clues, LineState
 from nonogram.exceptions import CellConflictContradiction, LineTooShortContradiction
 from nonogram.rules import Rule
 from nonogram.rules.simple_rules import black_runs
@@ -6,30 +6,30 @@ from nonogram.rules.simple_rules import black_runs
 
 class OverlapRule(Rule):
     @staticmethod
-    def apply(clues: LineClue, state: LineView) -> LineView:
+    def apply(clues: Clues, state: LineState) -> LineState:
         if not clues or state.is_complete():
             return state
 
         earliest = earliest_starts(clues, state)
         latest = latest_starts(clues, state)
 
-        new = LineView(state)
+        new = LineState(state)
 
         for clue, early, late in zip(clues, earliest, latest):
             start = max(early, late)
             end = min(early + clue, late + clue)
 
             for i in range(start, end):
-                if new[i] == CellState.WHITE:
+                if new[i] == Cell.CROSS:
                     raise CellConflictContradiction()
-                new[i] = CellState.BLACK
+                new[i] = Cell.BOX
 
         return new
 
 
 class NeverBlackRule(Rule):
     @staticmethod
-    def apply(clues: LineClue, state: LineView) -> LineView:
+    def apply(clues: Clues, state: LineState) -> LineState:
         if not clues or state.is_complete():
             return state
 
@@ -42,23 +42,23 @@ class NeverBlackRule(Rule):
             for i in range(early, late + clue):
                 coverage[i] = True
 
-        new = LineView(state)
+        new = LineState(state)
         for i, can_be_black in enumerate(coverage):
             if not can_be_black:
-                if state[i] == CellState.BLACK:
+                if state[i] == Cell.BOX:
                     raise CellConflictContradiction(
                         "Overlap suggests cell can never be black", clues, state
                     )
-                new[i] = CellState.WHITE
+                new[i] = Cell.CROSS
 
         return new
 
 
 class MinimumLengthExpansionRule(Rule):
     @staticmethod
-    def apply(clues: LineClue, state: LineView) -> LineView:
+    def apply(clues: Clues, state: LineState) -> LineState:
         n = len(state)
-        new_state = LineView(state)
+        new_state = LineState(state)
 
         if not clues or state.is_complete():
             return new_state
@@ -69,9 +69,9 @@ class MinimumLengthExpansionRule(Rule):
         runs = black_runs(state)
 
         for run_start, run_len in runs:
-            left_bounded = run_start == 0 or state[run_start - 1] == CellState.WHITE
+            left_bounded = run_start == 0 or state[run_start - 1] == Cell.CROSS
             right_end = run_start + run_len
-            right_bounded = right_end == n or state[right_end] == CellState.WHITE
+            right_bounded = right_end == n or state[right_end] == Cell.CROSS
 
             if not (left_bounded or right_bounded) or (left_bounded and right_bounded):
                 continue
@@ -90,20 +90,20 @@ class MinimumLengthExpansionRule(Rule):
             required_length = min(possible_clues)
             start = run_start if left_bounded else run_start + run_len - required_length
             for i in range(start, start + required_length):
-                if i >= n or new_state[i] == CellState.WHITE:
+                if i >= n or new_state[i] == Cell.CROSS:
                     raise CellConflictContradiction()
-                new_state[i] = CellState.BLACK
+                new_state[i] = Cell.BOX
 
             if len(possible_clues) == 1:
                 if start - 1 >= 0:
-                    new_state[start - 1] = CellState.WHITE
+                    new_state[start - 1] = Cell.CROSS
                 if start + required_length < n:
-                    new_state[start + required_length] = CellState.WHITE
+                    new_state[start + required_length] = Cell.CROSS
 
         return new_state
 
 
-def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
+def earliest_starts(clues: Clues, state: LineState) -> list[int]:
     """Returns the indices of the earliest start to each clue.
     Ignores some aspects of current cells, other than completely impossible
 
@@ -123,9 +123,9 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
                 raise LineTooShortContradiction()
 
             if (
-                any(state[i] == CellState.WHITE for i in range(pos, pos + clue))
-                or (pos > 0 and state[pos - 1] == CellState.BLACK)
-                or (pos + clue < len(state) and state[pos + clue] == CellState.BLACK)
+                any(state[i] == Cell.CROSS for i in range(pos, pos + clue))
+                or (pos > 0 and state[pos - 1] == Cell.BOX)
+                or (pos + clue < len(state) and state[pos + clue] == Cell.BOX)
             ):
                 pos += 1
                 continue
@@ -139,7 +139,7 @@ def earliest_starts(clues: LineClue, state: LineView) -> list[int]:
     return starts
 
 
-def latest_starts(clues: LineClue, state: LineView) -> list[int]:
+def latest_starts(clues: Clues, state: LineState) -> list[int]:
     """Returns the indices of the latest start to each clue.
     Ignores some aspects of current cells, other than completely impossible
 
@@ -152,8 +152,8 @@ def latest_starts(clues: LineClue, state: LineView) -> list[int]:
     n = len(state)
 
     # Reverse everything
-    rev_state = LineView(state[::-1])
-    rev_clues = LineClue(clues[::-1])
+    rev_state = LineState(state[::-1])
+    rev_clues = Clues(clues[::-1])
     rev_starts = earliest_starts(rev_clues, rev_state)
 
     # Map reversed starts back to original indices

@@ -1,6 +1,6 @@
 from collections import deque
 
-from nonogram.core import Grid, LineClue
+from nonogram.core import Clues, Grid
 from nonogram.solver.line_solver import LineSolver
 from nonogram.solver.observer import EngineObserver
 
@@ -10,7 +10,7 @@ class PropagationEngine:
         self.line_solver = line_solver
         self.observer = observer
 
-    def propagate(self, grid: Grid, row_clues: list[LineClue], col_clues: list[LineClue]) -> bool:
+    def propagate(self, grid: Grid, row_clues: list[Clues], col_clues: list[Clues]) -> bool:
         """Propagates a grid as far as possible using the engine's line solver.
 
         Args:

@@ -1,4 +1,4 @@
-from nonogram.core import LineClue, LineView
+from nonogram.core import Clues, LineState
 from nonogram.rules import Rule
 
 
@@ -6,7 +6,7 @@ class LineSolver:
     def __init__(self, rules: list[Rule]):
         self.rules = rules
 
-    def solve(self, clues: LineClue, state: LineView) -> LineView:
+    def solve(self, clues: Clues, state: LineState) -> LineState:
         """Solves as much of the given state as possible with the clues.
 
         Args:
@@ -16,8 +16,8 @@ class LineSolver:
         Returns:
             LineView: The (potentially) updated line state.
         """
-        prev: LineView | None = None
-        curr = LineView(state)
+        prev: LineState | None = None
+        curr = LineState(state)
 
         while curr != prev:
             prev = curr

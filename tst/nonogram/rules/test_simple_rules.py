@@ -1,6 +1,6 @@
 import pytest
 
-from nonogram.core import LineView
+from nonogram.core import LineState
 from nonogram.rules.simple_rules import CompleteCluesRule, FirstClueGapRule, black_runs
 from tst.nonogram.utils import RuleTester
 
@@ -22,7 +22,7 @@ class TestBlackRuns:
         ],
     )
     def test_basic_usage(self, state, expected):
-        assert black_runs(LineView(state)) == expected
+        assert black_runs(LineState(state)) == expected
 
 
 class TestCompleteCluesRule:

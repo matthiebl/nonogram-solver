@@ -1,11 +1,7 @@
 import pytest
 
-from nonogram.core import LineClue, LineView
-from nonogram.rules.split_rules import (
-    CompleteEdgeSplitRule,
-    consume_complete_prefix,
-    forced_run_assignment,
-)
+from nonogram.core import Clues, LineState
+from nonogram.rules.split_rules import CompleteEdgeSplitRule, consume_complete_prefix
 
 
 class TestCompleteEdgeSplitRule:
@@ -21,11 +17,11 @@ class TestCompleteEdgeSplitRule:
     )
     def test_left_to_right(self, clues, state, expected):
         rule = CompleteEdgeSplitRule()
-        segments = rule.split(LineClue(clues), LineView(state))
-        assert segments == tuple((LineClue(clue), LineView(state)) for clue, state in expected)
+        segments = rule.split(Clues(clues), LineState(state))
+        assert segments == tuple((Clues(clue), LineState(state)) for clue, state in expected)
 
         state_segments = [state for _, state in segments]
-        assert rule.merge(state_segments) == LineView(state)
+        assert rule.merge(state_segments) == LineState(state)
 
 
 class TestConsumeHelper:
@@ -48,20 +44,9 @@ class TestConsumeHelper:
     )
     def test_left_to_right(self, clues, state, expected):
         a_clue, a_state, b_clue, b_state = expected
-        assert consume_complete_prefix(LineClue(clues), LineView(state)) == (
-            LineClue(a_clue),
-            LineView(a_state),
-            LineClue(b_clue),
-            LineView(b_state),
+        assert consume_complete_prefix(Clues(clues), LineState(state)) == (
+            Clues(a_clue),
+            LineState(a_state),
+            Clues(b_clue),
+            LineState(b_state),
         )
-
-
-class TestForcedRunAssignment:
-    @pytest.mark.parametrize(
-        "clues, state, expected",
-        [
-            ((2, 2, 2, 2, 5), "   .#  .#  .# ..##.   .#####..", {(23, 5): 4}),
-        ],
-    )
-    def test_basic_usage(self, clues, state, expected):
-        assert forced_run_assignment(clues, state) == expected

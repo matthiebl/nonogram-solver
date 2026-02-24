@@ -1,4 +1,4 @@
-from nonogram.core import LineClue, LineView
+from nonogram.core import Clues, LineState
 from nonogram.rules import Rule, SplitRule
 from nonogram.solver.line_solver import LineSolver
 
@@ -8,7 +8,7 @@ class SplitLineSolver(LineSolver):
         super().__init__(rules)
         self.split_rules = split_rules
 
-    def solve(self, clues: LineClue, state: LineView) -> LineView:
+    def solve(self, clues: Clues, state: LineState) -> LineState:
         curr = super().solve(clues, state)
 
         if curr.is_complete():

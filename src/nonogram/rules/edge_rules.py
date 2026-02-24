@@ -1,89 +1,89 @@
 from collections.abc import Callable
 
-from nonogram.core import CellState, LineClue, LineView
+from nonogram.core import Cell, Clues, LineState
 from nonogram.exceptions import CellConflictContradiction
 from nonogram.rules import Rule
 
 
 def mirror_rule(
-    rule: Callable[[LineClue, LineView], LineView],
-) -> Callable[[LineClue, LineView], LineView]:
-    def mirrored(clues: LineClue, state: LineView) -> LineView:
-        new = rule(LineClue(clues[::-1]), LineView(state[::-1]))
-        return LineView(new[::-1])
+    rule: Callable[[Clues, LineState], LineState],
+) -> Callable[[Clues, LineState], LineState]:
+    def mirrored(clues: Clues, state: LineState) -> LineState:
+        new = rule(Clues(clues[::-1]), LineState(state[::-1]))
+        return LineState(new[::-1])
 
     return mirrored
 
 
 class EdgeRule(Rule):
     @classmethod
-    def apply(cls, clues: LineClue, state: LineView) -> LineView:
+    def apply(cls, clues: Clues, state: LineState) -> LineState:
         left = cls.apply_left_to_right(clues, state)
         return mirror_rule(cls.apply_left_to_right)(clues, left)
 
     @staticmethod
-    def apply_left_to_right(clues: LineClue, state: LineView) -> LineView:
+    def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         raise NotImplementedError()
 
 
 class CompleteEdgeRule(EdgeRule):
     @staticmethod
-    def apply_left_to_right(clues: LineClue, state: LineView) -> LineView:
+    def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         if state.is_complete():
             return state
         if not clues:
-            if any(cell == CellState.BLACK for cell in state):
+            if any(cell == Cell.BOX for cell in state):
                 raise CellConflictContradiction("No clues remaining require non-black state")
-            return LineView([CellState.WHITE] * len(state))
+            return LineState([Cell.CROSS] * len(state))
 
         i = 0
-        while i < len(state) and state[i] == CellState.WHITE:
+        while i < len(state) and state[i] == Cell.CROSS:
             i += 1
-        if i == len(state) or state[i] == CellState.UNKNOWN:
+        if i == len(state) or state[i] == Cell.UNKNOWN:
             return state
 
         # Here we have worked up to a left touching black, which must be the first clue
         clue = clues[0]
         for j in range(i, i + clue):
-            if state[j] == CellState.WHITE:
+            if state[j] == Cell.CROSS:
                 raise CellConflictContradiction()
-            state[j] = CellState.BLACK
+            state[j] = Cell.BOX
 
         if j + 1 == len(state):
             return state
 
-        if state[j + 1] == CellState.BLACK:
+        if state[j + 1] == Cell.BOX:
             raise CellConflictContradiction()
-        state[j + 1] = CellState.WHITE
+        state[j + 1] = Cell.CROSS
 
-        return LineView(
+        return LineState(
             state[: j + 1]
-            + CompleteEdgeRule.apply_left_to_right(LineClue(clues[1:]), LineView(state[j + 1 :]))
+            + CompleteEdgeRule.apply_left_to_right(Clues(clues[1:]), LineState(state[j + 1 :]))
         )
 
 
 class GlueEdgeRule(EdgeRule):
     @staticmethod
-    def apply_left_to_right(clues: LineClue, state: LineView) -> LineView:
+    def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         if state.is_complete():
             return state
         if not clues:
-            if any(cell == CellState.BLACK for cell in state):
+            if any(cell == Cell.BOX for cell in state):
                 raise CellConflictContradiction("No clues remaining require non-black state")
-            return LineView([CellState.WHITE] * len(state))
+            return LineState([Cell.CROSS] * len(state))
 
         i = 0
-        while i < len(state) and state[i] == CellState.WHITE:
+        while i < len(state) and state[i] == Cell.CROSS:
             i += 1
 
         clue = clues[0]
         black = 0
         for _ in range(i, i + clue):
             if black:
-                if state[i] == CellState.WHITE:
+                if state[i] == Cell.CROSS:
                     raise CellConflictContradiction()
-                state[i] = CellState.BLACK
-            if state[i] == CellState.BLACK:
+                state[i] = Cell.BOX
+            if state[i] == Cell.BOX:
                 black += 1
             i += 1
 
@@ -91,29 +91,29 @@ class GlueEdgeRule(EdgeRule):
             return state
 
         if black == clue:
-            if state[i] == CellState.BLACK:
+            if state[i] == Cell.BOX:
                 raise CellConflictContradiction()
-        elif state[i] in (CellState.BLACK, CellState.UNKNOWN) or not black:
+        elif state[i] in (Cell.BOX, Cell.UNKNOWN) or not black:
             return state
 
-        state[i] = CellState.WHITE
-        return LineView(
-            state[:i] + GlueEdgeRule.apply_left_to_right(LineClue(clues[1:]), LineView(state[i:]))
+        state[i] = Cell.CROSS
+        return LineState(
+            state[:i] + GlueEdgeRule.apply_left_to_right(Clues(clues[1:]), LineState(state[i:]))
         )
 
 
 class MercuryEdgeRule(EdgeRule):
     @staticmethod
-    def apply_left_to_right(clues: LineClue, state: LineView) -> LineView:
+    def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         if state.is_complete():
             return state
         if not clues:
-            if any(cell == CellState.BLACK for cell in state):
+            if any(cell == Cell.BOX for cell in state):
                 raise CellConflictContradiction("No clues remaining require non-black state")
-            return LineView([CellState.WHITE] * len(state))
+            return LineState([Cell.CROSS] * len(state))
 
         i = 0
-        while i < len(state) and state[i] == CellState.UNKNOWN:
+        while i < len(state) and state[i] == Cell.UNKNOWN:
             i += 1
 
         clue = clues[0]
@@ -121,7 +121,7 @@ class MercuryEdgeRule(EdgeRule):
             return state
 
         empty = i
-        while i < len(state) and state[i] == CellState.BLACK:
+        while i < len(state) and state[i] == Cell.BOX:
             i += 1
 
         black = i - empty
@@ -129,10 +129,10 @@ class MercuryEdgeRule(EdgeRule):
             return state
 
         for k in range(empty + black - clue):
-            state[k] = CellState.WHITE
+            state[k] = Cell.CROSS
 
-        if state[i] == CellState.WHITE:
+        if state[i] == Cell.CROSS:
             for k in range(i - clue, i - 1):
-                state[k] = CellState.BLACK
+                state[k] = Cell.BOX
 
         return state

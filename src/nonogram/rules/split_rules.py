@@ -1,9 +1,9 @@
-from nonogram.core import CellState, LineClue, LineView
+from nonogram.core import Cell, Clues, LineState
 from nonogram.rules import SplitRule
 
 
 class CompleteEdgeSplitRule(SplitRule):
-    def split(self, clues: LineClue, state: LineView) -> tuple[tuple[LineClue, LineView], ...]:
+    def split(self, clues: Clues, state: LineState) -> tuple[tuple[Clues, LineState], ...]:
         if state.is_complete() or not clues:
             return ((clues, state),)
 
@@ -17,26 +17,26 @@ class CompleteEdgeSplitRule(SplitRule):
             splits.append((left_clues, left_state))
 
         right_clues, right_state, final_clues, final_state = consume_complete_prefix(
-            LineClue(remaining_clues[::-1]), LineView(remaining_state[::-1])
+            Clues(remaining_clues[::-1]), LineState(remaining_state[::-1])
         )
 
-        splits.append((LineClue(final_clues[::-1]), LineView(final_state[::-1])))
+        splits.append((Clues(final_clues[::-1]), LineState(final_state[::-1])))
 
         if right_state:
-            splits.append((LineClue(right_clues[::-1]), LineView(right_state[::-1])))
+            splits.append((Clues(right_clues[::-1]), LineState(right_state[::-1])))
 
         return tuple(splits)
 
-    def merge(self, segments: tuple[LineView, ...]) -> LineView:
-        merged: list[CellState] = []
+    def merge(self, segments: tuple[LineState, ...]) -> LineState:
+        merged: list[Cell] = []
         for segment in segments:
             merged.extend(segment)
-        return LineView(merged)
+        return LineState(merged)
 
 
 def consume_complete_prefix(
-    clues: LineClue, state: LineView
-) -> tuple[LineClue, LineView, LineClue, LineView]:
+    clues: Clues, state: LineState
+) -> tuple[Clues, LineState, Clues, LineState]:
     """
     Consumes fully-complete blocks from the left edge.
     Returns:
@@ -49,18 +49,18 @@ def consume_complete_prefix(
     remaining_clues = list(clues)
 
     while remaining_clues:
-        while i < n and state[i] == CellState.WHITE:
+        while i < n and state[i] == Cell.CROSS:
             i += 1
 
-        if i >= n or state[i] != CellState.BLACK:
+        if i >= n or state[i] != Cell.BOX:
             break
 
         black_start = i
-        while i < n and state[i] == CellState.BLACK:
+        while i < n and state[i] == Cell.BOX:
             i += 1
         black_length = i - black_start
 
-        if black_length != remaining_clues[0] or i >= n or state[i] != CellState.WHITE:
+        if black_length != remaining_clues[0] or i >= n or state[i] != Cell.CROSS:
             i = black_start
             break
 
@@ -68,8 +68,8 @@ def consume_complete_prefix(
         i += 1
 
     return (
-        LineClue(consumed_clues),
-        LineView(state[:i]),
-        LineClue(remaining_clues),
-        LineView(state[i:]),
+        Clues(consumed_clues),
+        LineState(state[:i]),
+        Clues(remaining_clues),
+        LineState(state[i:]),
     )

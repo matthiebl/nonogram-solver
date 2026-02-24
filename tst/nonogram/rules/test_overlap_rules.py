@@ -1,6 +1,6 @@
 import pytest
 
-from nonogram.core import LineClue, LineView
+from nonogram.core import Clues, LineState
 from nonogram.exceptions import Contradiction
 from nonogram.rules.overlap_rules import MinimumLengthExpansionRule, earliest_starts, latest_starts
 from tst.nonogram.utils import RuleTester
@@ -24,7 +24,7 @@ class TestEarliestStarts:
         ],
     )
     def test_basic_usage(self, clues, line, outcome):
-        assert earliest_starts(LineClue(clues), LineView(line)) == outcome
+        assert earliest_starts(Clues(clues), LineState(line)) == outcome
 
     @pytest.mark.parametrize(
         "clues, line",
@@ -41,7 +41,7 @@ class TestEarliestStarts:
     )
     def test_contradictions(self, clues, line):
         with pytest.raises(Contradiction):
-            earliest_starts(LineClue(clues), LineView(line))
+            earliest_starts(Clues(clues), LineState(line))
 
 
 class TestLatestStarts:
@@ -62,7 +62,7 @@ class TestLatestStarts:
         ],
     )
     def test_basic_usage(self, clues, line, outcome):
-        assert latest_starts(LineClue(clues), LineView(line)) == outcome
+        assert latest_starts(Clues(clues), LineState(line)) == outcome
 
     @pytest.mark.parametrize(
         "clues, line",
@@ -79,7 +79,7 @@ class TestLatestStarts:
     )
     def test_contradictions(self, clues, line):
         with pytest.raises(Contradiction):
-            latest_starts(LineClue(clues), LineView(line))
+            latest_starts(Clues(clues), LineState(line))
 
 
 class TestMinimumLengthExpansionRule:

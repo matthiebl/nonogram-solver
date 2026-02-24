@@ -1,6 +1,6 @@
 import pytest
 
-from nonogram.core import LineClue, LineView
+from nonogram.core import Clues, LineState
 from nonogram.rules.edge_rules import GlueEdgeRule, MercuryEdgeRule
 from nonogram.rules.enumeration_rules import EnumerationRule
 from nonogram.rules.overlap_rules import MinimumLengthExpansionRule, NeverBlackRule, OverlapRule
@@ -41,9 +41,9 @@ class TestLineSolverCompleteness:
         should be at least as good as the enumeration rule, with a much lower complexity of
         calculation.
         """
-        clues = LineClue(clues)
+        clues = Clues(clues)
 
         assert assert_state_at_least(
-            self.line_solver.solve(clues, LineView(state)),
-            EnumerationRule.apply(clues, LineView(state)),
+            self.line_solver.solve(clues, LineState(state)),
+            EnumerationRule.apply(clues, LineState(state)),
         )

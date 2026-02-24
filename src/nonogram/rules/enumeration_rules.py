@@ -1,7 +1,7 @@
 from functools import lru_cache
 from math import comb
 
-from nonogram.core import CellState, LineClue, LineView
+from nonogram.core import Cell, Clues, LineState
 from nonogram.exceptions import EnumerationContradiction
 from nonogram.rules import Rule
 
@@ -10,7 +10,7 @@ class EnumerationRule(Rule):
     cost = "HIGH"
 
     @staticmethod
-    def apply(clues: LineClue, state: LineView) -> LineView:
+    def apply(clues: Clues, state: LineState) -> LineState:
         complexity = line_complexity(clues, len(state))
         if complexity > 50_000:
             return state
@@ -22,20 +22,20 @@ class EnumerationRule(Rule):
         result = []
         for cell_options in zip(*possibilities):
             vals = set(cell_options)
-            result.append(vals.pop() if len(vals) == 1 else CellState.UNKNOWN)
+            result.append(vals.pop() if len(vals) == 1 else Cell.UNKNOWN)
 
-        return LineView(result)
+        return LineState(result)
 
 
 @lru_cache(maxsize=10_000)
-def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView, ...]:
+def enumerate_possibilities(clues: Clues, state: LineState) -> tuple[LineState, ...]:
     if not clues:
-        if CellState.BLACK in state:
+        if Cell.BOX in state:
             return ()
-        return (LineView([CellState.WHITE] * len(state)),)
+        return (LineState([Cell.CROSS] * len(state)),)
 
     if state.is_complete():
-        if state.count(CellState.BLACK) != sum(clues):
+        if state.count(Cell.BOX) != sum(clues):
             return ()
         return (state,)
 
@@ -44,20 +44,20 @@ def enumerate_possibilities(clues: LineClue, state: LineView) -> tuple[LineView,
     min_rest = sum(rest) + len(rest)
 
     for start in range(len(state) - clue - min_rest + 1):
-        prefix = [CellState.WHITE] * start + [CellState.BLACK] * clue
+        prefix = [Cell.CROSS] * start + [Cell.BOX] * clue
         if start + clue < len(state):
-            prefix += [CellState.WHITE]
+            prefix += [Cell.CROSS]
 
-        if any(state[i] not in (CellState.UNKNOWN, prefix[i]) for i in range(len(prefix))):
+        if any(state[i] not in (Cell.UNKNOWN, prefix[i]) for i in range(len(prefix))):
             continue
 
-        for tail in enumerate_possibilities(LineClue(rest), LineView(state[len(prefix) :])):
-            options.append(LineView(prefix + list(tail)))
+        for tail in enumerate_possibilities(Clues(rest), LineState(state[len(prefix) :])):
+            options.append(LineState(prefix + list(tail)))
 
     return tuple(options)
 
 
-def line_complexity(clues: LineClue, length: int) -> float:
+def line_complexity(clues: Clues, length: int) -> float:
     k = len(clues)
     if k == 0:
         return 1
