@@ -5,6 +5,9 @@ from nonogram.rules.simple_rules import black_runs
 
 
 class OverlapRule(Rule):
+    """The classic overlap/simple boxes technique. Finds cells that must be black in
+    all valid clue placements by overlapping the earliest and latest possible positions."""
+
     @staticmethod
     def apply(clues: Clues, state: LineState) -> LineState:
         if not clues or state.is_complete():
@@ -28,6 +31,9 @@ class OverlapRule(Rule):
 
 
 class NeverBlackRule(Rule):
+    """Complement to OverlapRule. Marks any cell that cannot be black in any valid
+    clue placement as a cross (outside the coverage range of all clues)."""
+
     @staticmethod
     def apply(clues: Clues, state: LineState) -> LineState:
         if not clues or state.is_complete():
@@ -55,6 +61,9 @@ class NeverBlackRule(Rule):
 
 
 class MinimumLengthExpansionRule(Rule):
+    """For a black run bounded on one side, expands it to the minimum clue length
+    that could own it. If only one clue can own it, places crosses at both endpoints."""
+
     @staticmethod
     def apply(clues: Clues, state: LineState) -> LineState:
         n = len(state)

@@ -3,6 +3,9 @@ from nonogram.rules import SplitRule
 
 
 class CompleteEdgeSplitRule(SplitRule):
+    """Splits a line at fully-determined prefix/suffix blocks into independent segments.
+    Allows solving each segment independently, then merging results back together."""
+
     def split(self, clues: Clues, state: LineState) -> tuple[tuple[Clues, LineState], ...]:
         if state.is_complete() or not clues:
             return ((clues, state),)

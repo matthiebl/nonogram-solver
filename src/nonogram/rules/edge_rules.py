@@ -27,6 +27,9 @@ class EdgeRule(Rule):
 
 
 class CompleteEdgeRule(EdgeRule):
+    """Recursively processes from the edge inward. When a black run touches the edge,
+    commits it if it matches the first clue, marks gaps as crosses, and recurses."""
+
     @staticmethod
     def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         if state.is_complete():
@@ -63,6 +66,9 @@ class CompleteEdgeRule(EdgeRule):
 
 
 class GlueEdgeRule(EdgeRule):
+    """More aggressive than CompleteEdgeRule. Forces partial black runs near the edge
+    to complete to the first clue length, then separates with a cross and recurses."""
+
     @staticmethod
     def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         if state.is_complete():
@@ -103,6 +109,9 @@ class GlueEdgeRule(EdgeRule):
 
 
 class MercuryEdgeRule(EdgeRule):
+    """Handles unknowns at the edge followed by a black run. If the gap is too small
+    for the first clue, crosses it out. If the run is bounded by a cross, fills backward."""
+
     @staticmethod
     def apply_left_to_right(clues: Clues, state: LineState) -> LineState:
         if state.is_complete():

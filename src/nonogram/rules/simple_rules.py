@@ -3,6 +3,9 @@ from nonogram.rules import Rule
 
 
 class CompleteCluesRule(Rule):
+    """If the existing black runs already match the clues exactly, fill all remaining
+    unknowns with crosses. Early termination when all clues are successfully placed."""
+
     @staticmethod
     def apply(clues: Clues, state: LineState) -> LineState:
         black = [length for _, length in black_runs(state)]
@@ -19,6 +22,10 @@ class CompleteCluesRule(Rule):
 
 
 class FirstClueGapRule(Rule):
+    """Handles the edge case where the first or last clue has only one position.
+    If a black run matches the clue length with exactly one empty cell of space, that cell
+    must be a cross."""
+
     @staticmethod
     def apply(clues: Clues, state: LineState) -> LineState:
         runs = black_runs(state)
