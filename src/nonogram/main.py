@@ -52,6 +52,12 @@ def solve_nonogram(path: str) -> None:
         engine.propagate(puzzle.grid, puzzle.row_clues, puzzle.col_clues)
 
 
+def open_ui(input_path: str | None = None) -> None:
+    from nonogram.ui import NonogramApp
+
+    NonogramApp(input_path=input_path).run()
+
+
 def main() -> None:
     parser = ArgumentParser(prog="nonogram", description="Nonogram puzzle solver")
 
@@ -60,10 +66,17 @@ def main() -> None:
     solve_parser = subparsers.add_parser("solve", help="Solve a nonogram puzzle")
     solve_parser.add_argument("input", type=str, help="Input to solve")
 
+    ui_parser = subparsers.add_parser("ui", help="Open interactive UI solver")
+    ui_parser.add_argument(
+        "--input", type=str, default=None, help="Optional puzzle JSON to load directly"
+    )
+
     args = parser.parse_args()
 
     if args.command == "solve":
         solve_nonogram(args.input)
+    elif args.command == "ui":
+        open_ui(getattr(args, "input", None))
 
 
 if __name__ == "__main__":
