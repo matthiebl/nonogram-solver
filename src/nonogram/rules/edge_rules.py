@@ -75,7 +75,9 @@ class GlueEdgeRule(EdgeRule):
             return state
         if not clues:
             if any(cell == Cell.BOX for cell in state):
-                raise CellConflictContradiction("No clues remaining require non-black state")
+                raise CellConflictContradiction(
+                    f"No clues remaining require non-black state, [{clues}] '{state}'"
+                )
             return LineState([Cell.CROSS] * len(state))
 
         i = 0
@@ -98,7 +100,7 @@ class GlueEdgeRule(EdgeRule):
 
         if black == clue:
             if state[i] == Cell.BOX:
-                raise CellConflictContradiction()
+                raise CellConflictContradiction(f"{clues}, {state}")
         elif state[i] in (Cell.BOX, Cell.UNKNOWN) or not black:
             return state
 

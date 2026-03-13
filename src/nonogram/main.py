@@ -6,13 +6,19 @@ from rich.live import Live
 from nonogram.parser import parse_nonogram
 from nonogram.printer import RichObserver
 from nonogram.rules.edge_rules import GlueEdgeRule, MercuryEdgeRule
-from nonogram.rules.overlap_rules import MinimumLengthExpansionRule, NeverBlackRule, OverlapRule
-from nonogram.rules.simple_rules import CompleteCluesRule, FirstClueGapRule
+from nonogram.rules.overlap_rules import (
+    ClueOrderingConstraintRule,
+    ForcedSeparationRule,
+    MinimumLengthExpansionRule,
+    NeverBlackRule,
+    OverlapRule,
+    RunCappingRule,
+    UniqueAssignmentRule,
+)
+from nonogram.rules.simple_rules import CompleteCluesRule, FirstClueGapRule, GapTooSmallRule
 from nonogram.rules.split_rules import CompleteEdgeSplitRule
 from nonogram.solver.engine import PropagationEngine
 from nonogram.solver.split_line_solver import SplitLineSolver
-
-# from nonogram.rules.enumeration_rules import EnumerationRule
 
 
 def solve_nonogram(path: str) -> None:
@@ -26,7 +32,12 @@ def solve_nonogram(path: str) -> None:
             MercuryEdgeRule(),
             FirstClueGapRule(),
             MinimumLengthExpansionRule(),
+            RunCappingRule(),
+            ForcedSeparationRule(),
+            UniqueAssignmentRule(),
+            ClueOrderingConstraintRule(),
             NeverBlackRule(),
+            GapTooSmallRule(),
             CompleteCluesRule(),
         ],
         split_rules=[

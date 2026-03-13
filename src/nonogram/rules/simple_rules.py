@@ -50,6 +50,40 @@ class FirstClueGapRule(Rule):
         return new
 
 
+class GapTooSmallRule(Rule):
+    """Marks a contiguous gap of unknowns as crosses when it is too short to fit any clue.
+    A gap bounded by crosses (or edges) that is smaller than the minimum clue must be empty."""
+
+    @staticmethod
+    def apply(clues: Clues, state: LineState) -> LineState:
+        if not clues or state.is_complete():
+            return state
+
+        min_clue = min(clues)
+        new = LineState(state)
+        n = len(state)
+        i = 0
+
+        while i < n:
+            if state[i] != Cell.UNKNOWN:
+                i += 1
+                continue
+
+            gap_start = i
+            while i < n and state[i] == Cell.UNKNOWN:
+                i += 1
+            gap_len = i - gap_start
+
+            left_ok = gap_start == 0 or state[gap_start - 1] == Cell.CROSS
+            right_ok = i == n or state[i] == Cell.CROSS
+
+            if left_ok and right_ok and gap_len < min_clue:
+                for j in range(gap_start, gap_start + gap_len):
+                    new[j] = Cell.CROSS
+
+        return new
+
+
 def black_runs(state: LineState) -> list[tuple[int, int]]:
     """Returns a list of the sequences of black cells.
 
