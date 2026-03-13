@@ -14,16 +14,19 @@ class SplitLineSolver(LineSolver):
         if curr.is_complete():
             return curr
 
-        for rule in self.split_rules:
-            rule = rule.new()
-            segments = rule.split(clues, curr)
+        for split_rule in self.split_rules:
+            split_rule = split_rule.new()
+            segments = split_rule.split(clues, curr)
             if len(segments) == 1:
                 continue
 
             states = []
             for segment_clues, segment_state in segments:
-                states.append(self.solve(segment_clues, segment_state))
+                if segment_clues == clues and segment_state == state:
+                    states.append(segment_state)
+                else:
+                    states.append(self.solve(segment_clues, segment_state))
 
-            curr = rule.merge(tuple(states))
+            curr = split_rule.merge(tuple(states))
 
         return curr
