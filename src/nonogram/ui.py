@@ -112,23 +112,23 @@ class GridWidget(Widget):
                 is_highlighted = (i, j) in self.highlighted_cells
                 if cell == Cell.BOX:
                     if is_cursor:
-                        line_parts.append(f"\x1b[1m██\x1b[0m")
+                        line_parts.append("\x1b[1m██\x1b[0m")
                     elif is_highlighted:
-                        line_parts.append(f"\x1b[32m██\x1b[0m")
+                        line_parts.append("\x1b[32m██\x1b[0m")
                     else:
                         line_parts.append("██")
                 elif cell == Cell.CROSS:
                     if is_cursor:
-                        line_parts.append(f"\x1b[7m░░\x1b[0m")
+                        line_parts.append("\x1b[7m░░\x1b[0m")
                     elif is_highlighted:
-                        line_parts.append(f"\x1b[92m░░\x1b[0m")
+                        line_parts.append("\x1b[92m░░\x1b[0m")
                     else:
                         line_parts.append("░░")
                 else:  # UNKNOWN
                     if is_cursor:
-                        line_parts.append(f"\x1b[7m  \x1b[0m")
+                        line_parts.append("\x1b[7m  \x1b[0m")
                     elif is_highlighted:
-                        line_parts.append(f"\x1b[42m  \x1b[0m")
+                        line_parts.append("\x1b[42m  \x1b[0m")
                     else:
                         line_parts.append("  ")
                 if (j + 1) % 5 == 0 and j + 1 < width:
