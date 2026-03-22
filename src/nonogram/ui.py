@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 
@@ -9,14 +10,14 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.reactive import reactive
-from textual.screen import Screen
+from textual.screen import ModalScreen, Screen
 from textual.timer import Timer
 from textual.widget import Widget
 from textual.widgets import Button, DirectoryTree, Input, Label, Static
 
 from nonogram.core import Cell, Clues, Grid
 from nonogram.parser import ParseError, PuzzleInput, parse_nonogram
-from nonogram.ui_solver import StepResult, StepwiseSolver
+from nonogram.solver.ui_solver import StepResult, StepwiseSolver
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Grid widget
@@ -44,6 +45,7 @@ class GridWidget(Widget):
         super().__init__()
         self.puzzle = puzzle
         self.solver = solver
+        self.highlighted_cells: set[tuple[int, int]] = set()
 
     # ── Layout helpers ──────────────────────────────────────────────────────
 
@@ -107,12 +109,28 @@ class GridWidget(Widget):
             line_parts: list[str] = [f"{clue_str:>{clue_w}} | "]
             for j, cell in enumerate(row_cells):
                 is_cursor = self.edit_mode and (i == cur_row) and (j == cur_col)
+                is_highlighted = (i, j) in self.highlighted_cells
                 if cell == Cell.BOX:
-                    line_parts.append(f"\x1b[1m{'██'}\x1b[0m" if is_cursor else "██")
+                    if is_cursor:
+                        line_parts.append(f"\x1b[1m██\x1b[0m")
+                    elif is_highlighted:
+                        line_parts.append(f"\x1b[32m██\x1b[0m")
+                    else:
+                        line_parts.append("██")
                 elif cell == Cell.CROSS:
-                    line_parts.append(f"\x1b[7m{'░░'}\x1b[0m" if is_cursor else "░░")
+                    if is_cursor:
+                        line_parts.append(f"\x1b[7m░░\x1b[0m")
+                    elif is_highlighted:
+                        line_parts.append(f"\x1b[92m░░\x1b[0m")
+                    else:
+                        line_parts.append("░░")
                 else:  # UNKNOWN
-                    line_parts.append(f"\x1b[7m{'  '}\x1b[0m" if is_cursor else "  ")
+                    if is_cursor:
+                        line_parts.append(f"\x1b[7m  \x1b[0m")
+                    elif is_highlighted:
+                        line_parts.append(f"\x1b[42m  \x1b[0m")
+                    else:
+                        line_parts.append("  ")
                 if (j + 1) % 5 == 0 and j + 1 < width:
                     line_parts.append("|")
             lines.append("".join(line_parts))
@@ -455,6 +473,119 @@ class ManualCluesScreen(Screen):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Save screen
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _puzzle_to_dict(puzzle: PuzzleInput, grid: Grid) -> dict:
+    """Serialize puzzle + current grid state to the JSON format."""
+    grid_data = ["".join(str(cell) for cell in row) for row in grid.cells]
+    data: dict = {
+        "version": "1",
+        "meta": puzzle.meta,
+        "width": puzzle.width,
+        "height": puzzle.height,
+        "rows": [list(clues) for clues in puzzle.row_clues],
+        "cols": [list(clues) for clues in puzzle.col_clues],
+        "grid": grid_data,
+    }
+    return data
+
+
+class SaveScreen(ModalScreen[str | None]):
+    """Modal dialog for saving the puzzle to a JSON file."""
+
+    DEFAULT_CSS = """
+    SaveScreen {
+        align: center middle;
+    }
+    SaveScreen #save-container {
+        width: 70;
+        height: 35;
+        padding: 1 2;
+        border: double $accent;
+        background: $surface;
+    }
+    SaveScreen Label.title {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+        width: 100%;
+    }
+    SaveScreen #dir-tree {
+        height: 1fr;
+        margin-bottom: 1;
+    }
+    SaveScreen #selected-dir {
+        margin-bottom: 1;
+    }
+    SaveScreen .field-row {
+        height: auto;
+        margin-bottom: 1;
+    }
+    SaveScreen .field-row Label {
+        width: 12;
+        padding-top: 1;
+    }
+    SaveScreen .field-row Input {
+        width: 1fr;
+    }
+    SaveScreen #save-error { color: $error; margin-bottom: 1; }
+    SaveScreen #save-btn-row { height: auto; }
+    SaveScreen #save-btn-row Button { width: 1fr; margin: 0 1; }
+    """
+
+    def __init__(self, puzzle: PuzzleInput, grid: Grid) -> None:
+        super().__init__()
+        self._puzzle = puzzle
+        self._grid = grid
+        self._selected_dir: Path = Path.cwd()
+
+    def compose(self) -> ComposeResult:
+        default_name = self._puzzle.meta.get("title", "puzzle").lower().replace(" ", "_") + ".json"
+        with Container(id="save-container"):
+            yield Label("Save Puzzle", classes="title")
+            yield Label(f"Folder: {self._selected_dir}", id="selected-dir")
+            yield DirectoryTree(str(self._selected_dir), id="dir-tree")
+            with Horizontal(classes="field-row"):
+                yield Label("Filename:")
+                yield Input(value=default_name, id="filename-input")
+            yield Label("", id="save-error")
+            with Horizontal(id="save-btn-row"):
+                yield Button("Cancel", id="btn-cancel", variant="default")
+                yield Button("Save", id="btn-save", variant="primary")
+
+    @on(DirectoryTree.DirectorySelected)
+    def on_dir_selected(self, event: DirectoryTree.DirectorySelected) -> None:
+        self._selected_dir = event.path
+        self.query_one("#selected-dir", Label).update(f"Folder: {self._selected_dir}")
+
+    @on(Button.Pressed, "#btn-cancel")
+    def cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#btn-save")
+    def save(self) -> None:
+        error = self.query_one("#save-error", Label)
+        filename = self.query_one("#filename-input", Input).value.strip()
+        if not filename:
+            error.update("Please enter a filename.")
+            return
+        if not filename.endswith(".json"):
+            filename += ".json"
+
+        save_path = self._selected_dir / filename
+        try:
+            data = _puzzle_to_dict(self._puzzle, self._grid)
+            save_path.write_text(json.dumps(data, indent=2) + "\n")
+        except Exception as exc:
+            error.update(f"Error: {exc}")
+            return
+
+        self.dismiss(str(save_path))
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Solver screen
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -466,6 +597,8 @@ class SolverScreen(Screen):
         Binding("r", "run", "Run", show=True),
         Binding("escape", "stop", "Stop", show=True),
         Binding("e", "toggle_edit", "Edit", show=True),
+        Binding("n", "toggle_enum", "Enum", show=True),
+        Binding("ctrl+s", "save", "Save", show=True),
         Binding("x", "reset", "Reset", show=True),
         Binding("q", "quit_app", "Quit", show=True),
     ]
@@ -536,6 +669,8 @@ class SolverScreen(Screen):
                 yield Button("Run (r)", id="btn-run", variant="success")
                 yield Button("Stop (esc)", id="btn-stop", variant="warning")
                 yield Button("Edit (e)", id="btn-edit", variant="default")
+                yield Button("Enum (n)", id="btn-enum", variant="default")
+                yield Button("Save (^s)", id="btn-save", variant="default")
                 yield Button("Reset (x)", id="btn-reset", variant="warning")
                 yield Button("Quit (q)", id="btn-quit", variant="error")
             yield Static("Ready. Press 's' to step or 'r' to run.", id="status")
@@ -562,6 +697,14 @@ class SolverScreen(Screen):
     def btn_edit(self) -> None:
         self.action_toggle_edit()
 
+    @on(Button.Pressed, "#btn-enum")
+    def btn_enum(self) -> None:
+        self.action_toggle_enum()
+
+    @on(Button.Pressed, "#btn-save")
+    def btn_save(self) -> None:
+        self.action_save()
+
     @on(Button.Pressed, "#btn-reset")
     def btn_reset(self) -> None:
         self.action_reset()
@@ -585,6 +728,7 @@ class SolverScreen(Screen):
     def action_undo(self) -> None:
         self.action_stop()
         if self.solver.undo():
+            self.query_one(GridWidget).highlighted_cells = set()
             self._refresh_grid()
             self.refresh_status("Undone.")
         else:
@@ -606,6 +750,7 @@ class SolverScreen(Screen):
         self.solver.reset()
         self._start_time = time.time()
         grid_widget = self.query_one(GridWidget)
+        grid_widget.highlighted_cells = set()
         grid_widget.edit_mode = False
         grid_widget.cursor = (0, 0)
         self._is_editing = False
@@ -627,6 +772,28 @@ class SolverScreen(Screen):
             btn.variant = "default"
             self.refresh_status("Edit mode off.")
 
+    def action_save(self) -> None:
+        self.action_stop()
+
+        def on_save_result(result: str | None) -> None:
+            if result:
+                self.refresh_status(f"Saved to {result}")
+                self.notify(f"Saved: {result}")
+            else:
+                self.refresh_status("Save cancelled.")
+
+        self.app.push_screen(SaveScreen(self.puzzle, self.solver.grid), on_save_result)
+
+    def action_toggle_enum(self) -> None:
+        enabled = self.solver.toggle_enumeration()
+        btn = self.query_one("#btn-enum", Button)
+        if enabled:
+            btn.variant = "warning"
+            self.refresh_status("Enumeration rule enabled.")
+        else:
+            btn.variant = "default"
+            self.refresh_status("Enumeration rule disabled.")
+
     def action_quit_app(self) -> None:
         self.app.exit()
 
@@ -641,6 +808,10 @@ class SolverScreen(Screen):
     # ── Helpers ──────────────────────────────────────────────────────────────
 
     def _after_step(self, result: StepResult | None) -> None:
+        grid_widget = self.query_one(GridWidget)
+        grid_widget.highlighted_cells = (
+            result.updated_cells if result and result.updated_cells else set()
+        )
         self._refresh_grid()
         if result is None:
             if self.solver.is_done:
@@ -653,7 +824,11 @@ class SolverScreen(Screen):
         complete = sum(cell != Cell.UNKNOWN for row in grid.cells for cell in row)
         total = self.puzzle.width * self.puzzle.height
 
-        if result.kind == "repopulate":
+        if result.error:
+            self.refresh_status(result.error)
+            self.notify(result.error, severity="error")
+            return
+        elif result.kind == "repopulate":
             msg = f"Queue exhausted, restarting pass... ({complete}/{total} complete)"
         elif result.is_done:
             elapsed = time.time() - self._start_time

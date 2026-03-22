@@ -9,6 +9,7 @@ from nonogram.rules.edge_rules import GlueEdgeRule, MercuryEdgeRule
 from nonogram.rules.overlap_rules import (
     ClueOrderingConstraintRule,
     ForcedSeparationRule,
+    LockedRunsRule,
     MinimumLengthExpansionRule,
     NeverBlackRule,
     OverlapRule,
@@ -21,10 +22,9 @@ from nonogram.solver.engine import PropagationEngine
 from nonogram.solver.split_line_solver import SplitLineSolver
 
 
-def solve_nonogram(path: str) -> None:
-    puzzle = parse_nonogram(path)
-
-    line_solver = SplitLineSolver(
+def make_line_solver() -> SplitLineSolver:
+    """Build the standard rule pipeline used by both terminal and UI solvers."""
+    return SplitLineSolver(
         rules=[
             CompleteCluesRule(),
             OverlapRule(),
@@ -38,12 +38,19 @@ def solve_nonogram(path: str) -> None:
             ClueOrderingConstraintRule(),
             NeverBlackRule(),
             GapTooSmallRule(),
+            LockedRunsRule(),
             CompleteCluesRule(),
         ],
         split_rules=[
             CompleteEdgeSplitRule(),
         ],
     )
+
+
+def solve_nonogram(path: str) -> None:
+    puzzle = parse_nonogram(path)
+
+    line_solver = make_line_solver()
 
     Console()
     with Live(None, refresh_per_second=10) as live:
