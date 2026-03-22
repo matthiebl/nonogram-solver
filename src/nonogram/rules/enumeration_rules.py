@@ -12,7 +12,7 @@ class EnumerationRule(Rule):
     @staticmethod
     def apply(clues: Clues, state: LineState) -> LineState:
         complexity = line_complexity(clues, len(state))
-        if complexity > 50_000:
+        if complexity > 100_000_000:
             return state
 
         possibilities = enumerate_possibilities(clues, state)

@@ -2,7 +2,12 @@ import pytest
 
 from nonogram.core import Clues, LineState
 from nonogram.exceptions import Contradiction
-from nonogram.rules.overlap_rules import MinimumLengthExpansionRule, earliest_starts, latest_starts
+from nonogram.rules.overlap_rules import (
+    LockedRunsRule,
+    MinimumLengthExpansionRule,
+    earliest_starts,
+    latest_starts,
+)
 from tst.nonogram.utils import RuleTester
 
 
@@ -118,3 +123,23 @@ class TestMinimumLengthExpansionRule:
     )
     def test_real_examples(self, clues, state, expected):
         self.tester.assert_apply_at_least(clues, state, expected)
+
+
+class TestLockedRunsRulee:
+    tester = RuleTester(LockedRunsRule)
+
+    @pytest.mark.parametrize(
+        "clues, state, expected",
+        [
+            ((3,), "     ", "     "),
+            ((3,), " #   ", " #  ."),
+            ((2, 7, 3), "           . ## #      .###...", "           . ## #      .###..."),
+            (
+                (2, 2, 2, 1, 2, 3),
+                "    .##.##...#   .#. ..##..###",
+                ".....##.##...# ...#....##..###",
+            ),
+        ],
+    )
+    def test_apply(self, clues, state, expected):
+        self.tester.assert_apply(clues, state, expected)

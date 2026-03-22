@@ -293,6 +293,72 @@ class ClueOrderingConstraintRule(Rule):
         return new
 
 
+class LockedRunsRule(Rule):
+    """When the number of black runs equals the number of clues, and every adjacent pair
+    of runs cannot be connected — either because a cross already separates them, or because
+    merging them would produce a run longer than the clue assigned to the left run — each
+    run is uniquely locked to its clue. Any unknown cell outside the reachable extent of
+    every run must be a cross.
+
+    The reachable extent of run i (assigned clue c) extends at most c - current_length
+    cells beyond the run in either direction, clipped to the run's segment (the region
+    between the nearest confirmed crosses or line edges)."""
+
+    @staticmethod
+    def apply(clues: Clues, state: LineState) -> LineState:
+        if not clues or state.is_complete():
+            return state
+
+        runs = black_runs(state)
+
+        if len(runs) != len(clues):
+            return state
+
+        # Each adjacent pair must be impossible to connect: either a cross already
+        # separates them, or the combined run would exceed the left run's clue.
+        for i in range(len(runs) - 1):
+            run_end = runs[i][0] + runs[i][1]
+            next_start = runs[i + 1][0]
+            gap = next_start - run_end
+            combined = runs[i][1] + gap + runs[i + 1][1]
+            has_cross = any(state[j] == Cell.CROSS for j in range(run_end, next_start))
+            if not has_cross and (combined <= clues[i] or combined <= clues[i + 1]):
+                return state
+
+        n = len(state)
+        reachable = [False] * n
+
+        for idx, (run_start, run_length) in enumerate(runs):
+            clue = clues[idx]
+            run_end = run_start + run_length
+            slack = clue - run_length
+
+            seg_start = 0
+            for j in range(run_start - 1, -1, -1):
+                if state[j] == Cell.CROSS:
+                    seg_start = j + 1
+                    break
+
+            seg_end = n
+            for j in range(run_end, n):
+                if state[j] == Cell.CROSS:
+                    seg_end = j
+                    break
+
+            left_extent = max(seg_start, run_start - slack)
+            right_extent = min(seg_end, run_end + slack)
+
+            for j in range(left_extent, right_extent):
+                reachable[j] = True
+
+        new = LineState(state)
+        for j in range(n):
+            if state[j] == Cell.UNKNOWN and not reachable[j]:
+                new[j] = Cell.CROSS
+
+        return new
+
+
 def earliest_starts(clues: Clues, state: LineState) -> list[int]:
     """Returns the indices of the earliest start to each clue.
     Ignores some aspects of current cells, other than completely impossible
